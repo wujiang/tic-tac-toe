@@ -17,10 +17,10 @@ const MYRUNE rune = 'O'
 const OTHERRUNE rune = 'X'
 const HELPMSG = `
 Tic-tac-toe manual:
-- LEFT: h, arrow-left
-- DOWN: j, arrow-down
-- UP: k, arrow-up
-- RIGHT: l, arrow-right
+- LEFT: h, ctrl-b, arrow-left
+- DOWN: j, ctrl-n, arrow-down
+- UP: k, ctrl-p, arrow-up
+- RIGHT: l, ctrl-f, arrow-right
 - EXIT: q, esc
 - ENTER: o, enter
 `
