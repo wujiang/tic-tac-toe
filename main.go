@@ -14,24 +14,24 @@ mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
-			// arrows, enter, and esc
+			// arrows ane emacs key bindings
 			switch ev.Key {
 			case termbox.KeyEnter:
 				tttc.PinCursor(client.MYRUNE)
 			case termbox.KeyEsc:
 				break mainloop
-			case termbox.KeyArrowLeft:
+			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				tttc.MoveCursor(client.LEFT)
-			case termbox.KeyArrowDown:
+			case termbox.KeyArrowDown, termbox.KeyCtrlN:
 				tttc.MoveCursor(client.DOWN)
-			case termbox.KeyArrowUp:
+			case termbox.KeyArrowUp, termbox.KeyCtrlP:
 				tttc.MoveCursor(client.UP)
-			case termbox.KeyArrowRight:
+			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				tttc.MoveCursor(client.RIGHT)
 
 			}
 
-			// vim binding
+			// vim key bindings
 			switch ev.Ch {
 			case 'o':
 				tttc.PinCursor(client.MYRUNE)
