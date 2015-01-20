@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
+	"github.com/wujiang/tic-tac-toe/server"
 )
 
 func main() {

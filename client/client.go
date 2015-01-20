@@ -33,7 +33,7 @@ func Fill(x, y, w, h int, r rune) {
 	}
 }
 
-func PrintLines(x, y int, msg string) {
+func PrintLines(x, y int, msg string, fg termbox.Attribute) {
 	xstart := x
 	ystart := y
 	for _, c := range msg {
@@ -42,7 +42,7 @@ func PrintLines(x, y int, msg string) {
 			ystart++
 			continue
 		}
-		termbox.SetCell(xstart, ystart, c, ttt.COLDEF, ttt.COLDEF)
+		termbox.SetCell(xstart, ystart, c, fg, ttt.COLDEF)
 		xstart++
 	}
 
@@ -173,8 +173,9 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
-	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+1, tttc.Status)
-	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, ttt.HELPMSG)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+2, tttc.Status,
+		termbox.ColorBlue)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, ttt.HELPMSG, ttt.COLDEF)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -211,5 +212,5 @@ func (tttc *TTTClient) Connect(s string) error {
 }
 
 func (tttc *TTTClient) SendPayload() error {
-
+	return nil
 }

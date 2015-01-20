@@ -2,6 +2,7 @@ package server
 
 import (
 	"container/list"
+	"fmt"
 	"net/http"
 	"sync"
 
@@ -36,42 +37,42 @@ type PlayerMove struct {
 	Pos     ttt.Position
 }
 
+type Group map[string]Round
+
 type TTTServer struct {
-	Groups       *map[string]Round
+	Groups       *Group
 	BenchPlayers *list.List
 
-	Joins        chan []Player     // incoming channel
-	QuitWaitings chan []Player     // incoming channel
-	QuitRounds   chan []PlayerMove // incoming channel
-	PlayerMoves  chan []PlayerMove // incoming channel
-	Rounds       chan []Round      // outgoing channel
+	Joins        chan *Player     // incoming channel
+	QuitWaitings chan *Player     // incoming channel
+	QuitRounds   chan *PlayerMove // incoming channel
+	PlayerMoves  chan *PlayerMove // incoming channel
+	Rounds       chan *Round      // outgoing channel
 }
 
-func (ttts *TTTServer) MakeRound(p Player) {
+func (ttts *TTTServer) MakeRound(p *Player) {
 	lock := sync.Mutex{}
 	lock.Lock()
 	defer lock.Unlock()
 	ttts.BenchPlayers.PushBack(p)
 	if ttts.BenchPlayers.Len() > 1 {
-		p1 := ttts.BenchPlayers.Front()
-		ttts.BenchPlayers.Remove(p1)
-		p2 := ttts.BenchPlayers.Front()
-		ttts.BenchPlayers.Remove(p2)
 		r := Round{}
 		r.RoundID = uuid.New()
-		r.P1 = &p1
-		r.P2 = &p2
-		r.NextTurn = &p1
-		ttts.Groups[r.RoundID] = r
+		p1 := ttts.BenchPlayers.Remove(ttts.BenchPlayers.Front())
+		p2 := ttts.BenchPlayers.Remove(ttts.BenchPlayers.Front())
+		r.P1 = p1.(*Player)
+		r.P2 = p2.(*Player)
+		r.NextTurn = r.P1
+		(*ttts.Groups)[r.RoundID] = r
 	}
 }
 
-func (ttts *TTTServer) QuitWaiting(p Player) {
+func (ttts *TTTServer) QuitWaiting(p *Player) {
 	lock := sync.Mutex{}
 	lock.Lock()
 	defer lock.Unlock()
 	for e := ttts.BenchPlayers.Front(); e != nil; e = e.Next() {
-		if e == p {
+		if e.Value == p {
 			ttts.BenchPlayers.Remove(e)
 			break
 		}
@@ -79,9 +80,9 @@ func (ttts *TTTServer) QuitWaiting(p Player) {
 }
 
 // Remove round from Groups and put the other user into BenchPlayers
-func (ttts *TTTServer) QuitRound(m PlayerMove) {
+func (ttts *TTTServer) QuitRound(m *PlayerMove) {
 	rd := (*ttts.Groups)[m.RoundID]
-	if rd == nil {
+	if &rd == nil {
 		return
 	}
 	toNotify := rd.P1
@@ -91,7 +92,7 @@ func (ttts *TTTServer) QuitRound(m PlayerMove) {
 	} else {
 		rd.P2 = nil
 	}
-	ttts.Rounds <- rd
+	ttts.Rounds <- &rd
 
 	// TODO: remove round from groups
 
@@ -100,14 +101,14 @@ func (ttts *TTTServer) QuitRound(m PlayerMove) {
 
 // TODO: ttts.Rounds may have a nil player, which means the other player is gone
 
-func (ttts *TTTServer) Judge(m PlayerMove) Round {
+func (ttts *TTTServer) Judge(m *PlayerMove) *Round {
 	rd := (*ttts.Groups)[m.RoundID]
 	if rd.Grid.HasSameMarksInRows(m.Pos, m.Plyer.Name) {
 		rd.Winner = m.Plyer
 	}
 	rd.NextTurn = m.Plyer
 	(*ttts.Groups)[m.RoundID] = rd
-	return rd
+	return &rd
 }
 
 func (ttts *TTTServer) run() {
@@ -131,9 +132,18 @@ var upgrader = &websocket.Upgrader{
 	WriteBufferSize: WRITE_BUFFER_SIZE,
 }
 
+func Init() *TTTServer {
+	ttts := TTTServer{}
+	group := make(Group)
+	// joins := make(chan []Player)
+	ttts.Groups = &group
+	return &ttts
+}
+
 func WSHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
+	fmt.Println(ws)
 }
