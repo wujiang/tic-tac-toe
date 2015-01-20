@@ -2,17 +2,25 @@ package client
 
 import (
 	"errors"
+	"net/http"
 
 	"code.google.com/p/go-uuid/uuid"
 
+	"github.com/gorilla/websocket"
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/common"
 )
 
+const (
+	WAIT_STATUS string = "Waiting for another player"
+)
+
 type TTTClient struct {
 	Name      string
+	Conn      *websocket.Conn
 	VSName    string
 	PairID    string
+	Status    string
 	CursorPos ttt.Position // cursor position
 	Grid      ttt.Grid
 }
@@ -165,6 +173,7 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+1, tttc.Status)
 	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, ttt.HELPMSG)
 
 	tttc.SetCursor(tttc.CursorPos)
@@ -188,4 +197,19 @@ func Init() *TTTClient {
 
 	tttc.CursorPos = center
 	return &tttc
+}
+
+func (tttc *TTTClient) Connect(s string) error {
+	dialer := websocket.DefaultDialer
+	ws, _, err := dialer.Dial(s, http.Header{})
+	if err != nil {
+		return err
+	}
+	tttc.Conn = ws
+	tttc.Status = WAIT_STATUS
+	return nil
+}
+
+func (tttc *TTTClient) SendPayload() error {
+
 }
