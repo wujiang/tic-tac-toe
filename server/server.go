@@ -10,7 +10,7 @@ import (
 
 type Conn struct {
 	ws   *websocket.Conn
-	send chan []byte
+	send chan []PlayerMove
 }
 
 type Player struct {

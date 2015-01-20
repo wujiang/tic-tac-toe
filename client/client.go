@@ -9,22 +9,12 @@ import (
 	"github.com/wujiang/tic-tac-toe/common"
 )
 
-type TBCell struct {
-	TBPos ttt.Position // termbox position
-	Ch    rune
-}
-
 type TTTClient struct {
 	Name      string
+	VSName    string
+	PairID    string
 	CursorPos ttt.Position // cursor position
-	Grid      *map[ttt.Position]TBCell
-}
-
-func (tbc *TBCell) DrawCell() {
-	if tbc.Ch != ttt.SPECIALRUNE {
-		termbox.SetCell(tbc.TBPos.X, tbc.TBPos.Y, tbc.Ch, ttt.COLDEF,
-			ttt.COLDEF)
-	}
+	Grid      ttt.Grid
 }
 
 func Fill(x, y, w, h int, r rune) {
@@ -56,17 +46,18 @@ func GetTBCenter() ttt.Position {
 }
 
 func GetCenter() ttt.Position {
-	x := (ttt.SIZE-1)/2 + 1
-	y := (ttt.SIZE-1)/2 + 1
+	x := (ttt.SIZE - 1) / 2
+	y := (ttt.SIZE - 1) / 2
 	return ttt.Position{x, y}
 }
 
 func IsValidatePosition(p ttt.Position) bool {
-	return p.X >= 1 && p.X <= ttt.SIZE && p.Y >= 1 && p.Y <= ttt.SIZE
+	return p.X >= 0 && p.X < ttt.SIZE && p.Y >= 0 && p.Y < ttt.SIZE
 }
 
 // Convert grid positions to termbox coordinates
-func ToTBPosition(p ttt.Position, tbCenter ttt.Position) (ttt.Position, error) {
+func ToTBPosition(p ttt.Position) (ttt.Position, error) {
+	tbCenter := GetTBCenter()
 	if !IsValidatePosition(p) {
 		return p, errors.New("Invalid position")
 	}
@@ -76,13 +67,27 @@ func ToTBPosition(p ttt.Position, tbCenter ttt.Position) (ttt.Position, error) {
 	return ttt.Position{x, y}, nil
 }
 
+func SetCell(p ttt.Position, r rune) {
+	tbPos, err := ToTBPosition(p)
+	if err == nil {
+		termbox.SetCell(tbPos.X, tbPos.Y, r, ttt.COLDEF, ttt.COLDEF)
+	}
+
+}
+
+func (tttc *TTTClient) NameToRune(s string) rune {
+	if s == tttc.Name {
+		return ttt.MYRUNE
+	} else if s == tttc.VSName {
+		return ttt.OTHERRUNE
+	} else {
+		return ttt.SPECIALRUNE
+	}
+}
+
 // Check if a cell is available
 func (tttc *TTTClient) CellIsAvailable(p ttt.Position) bool {
-	tbcell := (*tttc.Grid)[p]
-	if &tbcell != nil {
-		return tbcell.Ch == ttt.SPECIALRUNE
-	}
-	return false
+	return tttc.Grid.Get(p) == ""
 }
 
 func (tttc *TTTClient) MoveCursor(direction string) error {
@@ -109,21 +114,30 @@ func (tttc *TTTClient) MoveCursor(direction string) error {
 }
 
 func (tttc *TTTClient) SetCursor(p ttt.Position) error {
-	tbcell := (*tttc.Grid)[p]
-	if &tbcell != nil {
-		termbox.SetCursor(tbcell.TBPos.X, tbcell.TBPos.Y)
+	tbPos, err := ToTBPosition(p)
+	if err == nil {
+		termbox.SetCursor(tbPos.X, tbPos.Y)
 		return nil
 	}
-	return errors.New("Invalid position")
+	return err
 }
 
 func (tttc *TTTClient) PinCursor(r rune) bool {
 	if tttc.CellIsAvailable(tttc.CursorPos) {
-		tbPos := (*tttc.Grid)[tttc.CursorPos].TBPos
-		(*tttc.Grid)[tttc.CursorPos] = TBCell{tbPos, r}
+		tttc.Grid.Set(tttc.CursorPos, tttc.Name)
 		return true
 	} else {
 		return false
+	}
+}
+
+func (tttc *TTTClient) DrawCells() {
+	for x := 0; x < ttt.SIZE; x++ {
+		for y := 0; y < ttt.SIZE; y++ {
+			p := ttt.Position{x, y}
+			r := tttc.NameToRune(tttc.Grid.Get(p))
+			SetCell(p, r)
+		}
 	}
 }
 
@@ -155,9 +169,7 @@ func (tttc *TTTClient) RedrawAll() {
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
-	for _, v := range *tttc.Grid {
-		v.DrawCell()
-	}
+	tttc.DrawCells()
 	termbox.Flush()
 }
 
@@ -167,19 +179,13 @@ func Init() *TTTClient {
 	}
 
 	termbox.SetInputMode(termbox.InputEsc)
-	tbCenter := GetTBCenter()
 	center := GetCenter()
 	tttc := TTTClient{}
 	tttc.Name = uuid.New()
+
+	// TODO: set on connect
+	tttc.VSName = uuid.New()
+
 	tttc.CursorPos = center
-	grid := make(map[ttt.Position]TBCell)
-	tttc.Grid = &grid
-	for x := 1; x <= ttt.SIZE; x++ {
-		for y := 1; y <= ttt.SIZE; y++ {
-			p := ttt.Position{x, y}
-			tbPos, _ := ToTBPosition(p, tbCenter)
-			grid[p] = TBCell{tbPos, ttt.SPECIALRUNE}
-		}
-	}
 	return &tttc
 }

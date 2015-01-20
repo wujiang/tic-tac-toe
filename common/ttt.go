@@ -13,6 +13,10 @@ func (g *Grid) Get(p Position) string {
 	return g[p.X][p.Y]
 }
 
+func (g *Grid) Set(p Position, s string) {
+	g[p.X][p.Y] = s
+}
+
 const (
 	WIDTH  int = 30
 	HEIGHT int = 12
