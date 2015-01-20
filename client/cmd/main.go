@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/client"
+	"github.com/wujiang/tic-tac-toe/common"
 )
 
 func main() {
@@ -17,34 +18,34 @@ mainloop:
 			// arrows ane emacs key bindings
 			switch ev.Key {
 			case termbox.KeyEnter:
-				tttc.PinCursor(client.MYRUNE)
+				tttc.PinCursor(ttt.MYRUNE)
 			case termbox.KeyEsc:
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				tttc.MoveCursor(client.LEFT)
+				tttc.MoveCursor(ttt.LEFT)
 			case termbox.KeyArrowDown, termbox.KeyCtrlN:
-				tttc.MoveCursor(client.DOWN)
+				tttc.MoveCursor(ttt.DOWN)
 			case termbox.KeyArrowUp, termbox.KeyCtrlP:
-				tttc.MoveCursor(client.UP)
+				tttc.MoveCursor(ttt.UP)
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				tttc.MoveCursor(client.RIGHT)
+				tttc.MoveCursor(ttt.RIGHT)
 
 			}
 
 			// vim key bindings
 			switch ev.Ch {
 			case 'o':
-				tttc.PinCursor(client.MYRUNE)
+				tttc.PinCursor(ttt.MYRUNE)
 			case 'q':
 				break mainloop
 			case 'h':
-				tttc.MoveCursor(client.LEFT)
+				tttc.MoveCursor(ttt.LEFT)
 			case 'j':
-				tttc.MoveCursor(client.DOWN)
+				tttc.MoveCursor(ttt.DOWN)
 			case 'k':
-				tttc.MoveCursor(client.UP)
+				tttc.MoveCursor(ttt.UP)
 			case 'l':
-				tttc.MoveCursor(client.RIGHT)
+				tttc.MoveCursor(ttt.RIGHT)
 			}
 
 		case termbox.EventError:

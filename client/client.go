@@ -4,33 +4,31 @@ import (
 	"errors"
 
 	"github.com/nsf/termbox-go"
+	"github.com/wujiang/tic-tac-toe/common"
 )
 
-type Position struct {
-	x int
-	y int
-}
-
 type TBCell struct {
-	TBPos Position // termbox position
-	ch    rune
+	TBPos ttt.Position // termbox position
+	Ch    rune
 }
 
 type TTTClient struct {
-	cursorPos Position // cursor position
-	grid      *map[Position]TBCell
+	Name      string
+	CursorPos ttt.Position // cursor position
+	Grid      *map[ttt.Position]TBCell
 }
 
 func (tbc *TBCell) DrawCell() {
-	if tbc.ch != SPECIALRUNE {
-		termbox.SetCell(tbc.TBPos.x, tbc.TBPos.y, tbc.ch, COLDEF, COLDEF)
+	if tbc.Ch != ttt.SPECIALRUNE {
+		termbox.SetCell(tbc.TBPos.X, tbc.TBPos.Y, tbc.Ch, ttt.COLDEF,
+			ttt.COLDEF)
 	}
 }
 
 func Fill(x, y, w, h int, r rune) {
 	for ly := 0; ly < h; ly++ {
 		for lx := 0; lx < w; lx++ {
-			termbox.SetCell(x+lx, y+ly, r, COLDEF, COLDEF)
+			termbox.SetCell(x+lx, y+ly, r, ttt.COLDEF, ttt.COLDEF)
 		}
 	}
 }
@@ -44,106 +42,118 @@ func PrintLines(x, y int, msg string) {
 			ystart++
 			continue
 		}
-		termbox.SetCell(xstart, ystart, c, COLDEF, COLDEF)
+		termbox.SetCell(xstart, ystart, c, ttt.COLDEF, ttt.COLDEF)
 		xstart++
 	}
 
 }
 
-func GetTBCenter() Position {
+func GetTBCenter() ttt.Position {
 	w, h := termbox.Size()
-	return Position{w / 2, h / 2}
+	return ttt.Position{w / 2, h / 2}
 }
 
-func GetCenter() Position {
-	x := (SIZE-1)/2 + 1
-	y := (SIZE-1)/2 + 1
-	return Position{x, y}
+func GetCenter() ttt.Position {
+	x := (ttt.SIZE-1)/2 + 1
+	y := (ttt.SIZE-1)/2 + 1
+	return ttt.Position{x, y}
 }
 
-func ValidatePosition(p Position) error {
-	if p.x < 1 || p.x > SIZE || p.y < 1 || p.y > SIZE {
-		return errors.New("Positions are out of boundary")
-	}
-	return nil
+func IsValidatePosition(p ttt.Position) bool {
+	return p.X >= 1 && p.X <= ttt.SIZE && p.Y >= 1 && p.Y <= ttt.SIZE
 }
 
 // Convert grid positions to termbox coordinates
-func ToTBPosition(p Position, tbCenter Position) (Position, error) {
-	if err := ValidatePosition(p); err != nil {
-		return p, err
+func ToTBPosition(p ttt.Position, tbCenter ttt.Position) (ttt.Position, error) {
+	if !IsValidatePosition(p) {
+		return p, errors.New("Invalid position")
 	}
 	center := GetCenter()
-	x := tbCenter.x - (center.x-p.x)*WIDTH/SIZE
-	y := tbCenter.y - (center.y-p.y)*HEIGHT/SIZE
-	return Position{x, y}, nil
+	x := tbCenter.X - (center.X-p.X)*ttt.WIDTH/ttt.SIZE
+	y := tbCenter.Y - (center.Y-p.Y)*ttt.HEIGHT/ttt.SIZE
+	return ttt.Position{x, y}, nil
 }
 
-func (ttt *TTTClient) MoveCursor(direction string) error {
-	x := ttt.cursorPos.x
-	y := ttt.cursorPos.y
+// Check if a cell is available
+func (tttc *TTTClient) CellIsAvailable(p ttt.Position) bool {
+	tbcell := (*tttc.Grid)[p]
+	if &tbcell != nil {
+		return tbcell.Ch == ttt.SPECIALRUNE
+	}
+	return false
+}
+
+func (tttc *TTTClient) MoveCursor(direction string) error {
+	x := tttc.CursorPos.X
+	y := tttc.CursorPos.Y
 	switch direction {
-	case UP:
+	case ttt.UP:
 		y--
-	case DOWN:
+	case ttt.DOWN:
 		y++
-	case LEFT:
+	case ttt.LEFT:
 		x--
-	case RIGHT:
+	case ttt.RIGHT:
 		x++
 	}
 
-	if err := ValidatePosition(Position{x, y}); err != nil {
-		return err
+	if !IsValidatePosition(ttt.Position{x, y}) {
+		return errors.New("Invalid position")
 	}
 
-	ttt.cursorPos.x = x
-	ttt.cursorPos.y = y
+	tttc.CursorPos.X = x
+	tttc.CursorPos.Y = y
 	return nil
 }
 
-func (ttt *TTTClient) SetCursor(p Position) error {
-	tbcell := (*ttt.grid)[p]
+func (tttc *TTTClient) SetCursor(p ttt.Position) error {
+	tbcell := (*tttc.Grid)[p]
 	if &tbcell != nil {
-		termbox.SetCursor(tbcell.TBPos.x, tbcell.TBPos.y)
+		termbox.SetCursor(tbcell.TBPos.X, tbcell.TBPos.Y)
 		return nil
 	}
 	return errors.New("Invalid position")
 }
 
-func (ttt *TTTClient) PinCursor(r rune) {
-	tbPos := (*ttt.grid)[ttt.cursorPos].TBPos
-	(*ttt.grid)[ttt.cursorPos] = TBCell{tbPos, r}
+func (tttc *TTTClient) PinCursor(r rune) bool {
+	if tttc.CellIsAvailable(tttc.CursorPos) {
+		tbPos := (*tttc.Grid)[tttc.CursorPos].TBPos
+		(*tttc.Grid)[tttc.CursorPos] = TBCell{tbPos, r}
+		return true
+	} else {
+		return false
+	}
 }
 
-func (ttt *TTTClient) RedrawAll() {
-	termbox.Clear(COLDEF, COLDEF)
+func (tttc *TTTClient) RedrawAll() {
+	termbox.Clear(ttt.COLDEF, ttt.COLDEF)
 	tbCenter := GetTBCenter()
 
-	tbLeftXPos := tbCenter.x - WIDTH/2
-	tbUpYPos := tbCenter.y - HEIGHT/2
+	tbLeftXPos := tbCenter.X - ttt.WIDTH/2
+	tbUpYPos := tbCenter.Y - ttt.HEIGHT/2
 
-	for yoffset := 0; yoffset <= SIZE; yoffset++ {
-		for xoffset := 0; xoffset <= SIZE; xoffset++ {
-			xstart := tbLeftXPos + xoffset*XSPAN
-			ystart := tbUpYPos + yoffset*YSPAN
+	for yoffset := 0; yoffset <= ttt.SIZE; yoffset++ {
+		for xoffset := 0; xoffset <= ttt.SIZE; xoffset++ {
+			xstart := tbLeftXPos + xoffset*ttt.XSPAN
+			ystart := tbUpYPos + yoffset*ttt.YSPAN
 			// all intersections
-			termbox.SetCell(xstart, ystart, '+', COLDEF, COLDEF)
-			if xoffset < SIZE {
-				Fill(xstart+1, ystart, XSPAN-1, 1, '-')
+			termbox.SetCell(xstart, ystart, '+', ttt.COLDEF,
+				ttt.COLDEF)
+			if xoffset < ttt.SIZE {
+				Fill(xstart+1, ystart, ttt.XSPAN-1, 1, '-')
 			}
-			if yoffset < SIZE {
-				Fill(xstart, ystart+1, 1, YSPAN-1, '|')
+			if yoffset < ttt.SIZE {
+				Fill(xstart, ystart+1, 1, ttt.YSPAN-1, '|')
 			}
 
 		}
 	}
 
-	PrintLines(tbLeftXPos, tbUpYPos+HEIGHT+1, HELPMSG)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+1, ttt.HELPMSG)
 
-	ttt.SetCursor(ttt.cursorPos)
+	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
-	for _, v := range *ttt.grid {
+	for _, v := range *tttc.Grid {
 		v.DrawCell()
 	}
 	termbox.Flush()
@@ -158,14 +168,14 @@ func Init() *TTTClient {
 	tbCenter := GetTBCenter()
 	center := GetCenter()
 	tttc := TTTClient{}
-	tttc.cursorPos = center
-	grid := make(map[Position]TBCell)
-	tttc.grid = &grid
-	for x := 1; x <= SIZE; x++ {
-		for y := 1; y <= SIZE; y++ {
-			p := Position{x, y}
+	tttc.CursorPos = center
+	grid := make(map[ttt.Position]TBCell)
+	tttc.Grid = &grid
+	for x := 1; x <= ttt.SIZE; x++ {
+		for y := 1; y <= ttt.SIZE; y++ {
+			p := ttt.Position{x, y}
 			tbPos, _ := ToTBPosition(p, tbCenter)
-			grid[p] = TBCell{tbPos, SPECIALRUNE}
+			grid[p] = TBCell{tbPos, ttt.SPECIALRUNE}
 		}
 	}
 	return &tttc
