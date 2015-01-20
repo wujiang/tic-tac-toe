@@ -3,6 +3,8 @@ package client
 import (
 	"errors"
 
+	"code.google.com/p/go-uuid/uuid"
+
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/common"
 )
@@ -149,7 +151,7 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
-	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+1, ttt.HELPMSG)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, ttt.HELPMSG)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -168,6 +170,7 @@ func Init() *TTTClient {
 	tbCenter := GetTBCenter()
 	center := GetCenter()
 	tttc := TTTClient{}
+	tttc.Name = uuid.New()
 	tttc.CursorPos = center
 	grid := make(map[ttt.Position]TBCell)
 	tttc.Grid = &grid
