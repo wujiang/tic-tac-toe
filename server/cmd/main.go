@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/http"
 
-	"github.com/golang/glog"
 	"github.com/wujiang/tic-tac-toe/server"
 )
 
@@ -14,7 +14,8 @@ func main() {
 
 	http.HandleFunc("/ws", server.WSHandler)
 
+	fmt.Println("Server is running at", *addr)
 	if err := http.ListenAndServe(*addr, nil); err != nil {
-		glog.Fatal("Can not start server:", err)
+		panic(err)
 	}
 }

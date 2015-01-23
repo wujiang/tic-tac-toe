@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 
-	"github.com/golang/glog"
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/client"
 	"github.com/wujiang/tic-tac-toe/common"
@@ -12,14 +11,14 @@ import (
 // TODO: send PingMessage to server to keep the connection alive
 
 func main() {
-	server := flag.String("s", "ws://localhost:8001", "server")
+	server := flag.String("s", "ws://localhost:8001/ws", "server")
 	flag.Parse()
 
 	tttc := client.Init()
 	defer termbox.Close()
 
 	if err := tttc.Connect(*server); err != nil {
-		glog.Fatal(err)
+		panic(err)
 	}
 
 	tttc.RedrawAll()

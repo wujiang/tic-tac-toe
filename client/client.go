@@ -19,7 +19,7 @@ type TTTClient struct {
 	Name      string
 	Conn      *websocket.Conn
 	VSName    string
-	PairID    string
+	RoundID   string
 	Status    string
 	CursorPos ttt.Position // cursor position
 	Grid      ttt.Grid
@@ -94,8 +94,9 @@ func (tttc *TTTClient) NameToRune(s string) rune {
 }
 
 // Check if a cell is available
-func (tttc *TTTClient) CellIsAvailable(p ttt.Position) bool {
-	return tttc.Grid.Get(p) == ""
+func (tttc *TTTClient) CellIsPinnable(p ttt.Position) bool {
+	// return tttc.RoundID != "" && tttc.Grid.Get(p) == ""
+	return true
 }
 
 func (tttc *TTTClient) MoveCursor(direction string) error {
@@ -131,8 +132,9 @@ func (tttc *TTTClient) SetCursor(p ttt.Position) error {
 }
 
 func (tttc *TTTClient) PinCursor(r rune) bool {
-	if tttc.CellIsAvailable(tttc.CursorPos) {
+	if tttc.CellIsPinnable(tttc.CursorPos) {
 		tttc.Grid.Set(tttc.CursorPos, tttc.Name)
+		tttc.SendPin(tttc.CursorPos)
 		return true
 	} else {
 		return false
@@ -207,10 +209,16 @@ func (tttc *TTTClient) Connect(s string) error {
 		return err
 	}
 	tttc.Conn = ws
-	tttc.Status = WAIT_STATUS
 	return nil
 }
 
-func (tttc *TTTClient) SendPayload() error {
-	return nil
+// join the wait queue
+func (tttc *TTTClient) SendPin(p ttt.Position) error {
+	m := ttt.PlayerAction{
+		tttc.RoundID,
+		tttc.Name,
+		p,
+		ttt.CMD_MOVE,
+	}
+	return tttc.Conn.WriteJSON(m)
 }
