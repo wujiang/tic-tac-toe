@@ -2,7 +2,6 @@ package server
 
 import (
 	"container/list"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -20,7 +19,7 @@ type Player struct {
 }
 
 // Parse the action sent by a client
-func (p *Player) ParseAction() {
+func (p *Player) parseAction() {
 	for {
 		m := ttt.PlayerAction{}
 		_ = p.WS.ReadJSON(&m)
@@ -36,12 +35,8 @@ func (p *Player) ParseAction() {
 		}
 	}
 
-	fmt.Println("close connection")
+	glog.Info("close connection for player ", p.Name)
 	p.WS.Close()
-
-}
-
-func (p *Player) Act() {
 
 }
 
@@ -54,13 +49,13 @@ type Round struct {
 }
 
 // Switch turn in a matching round
-func (r *Round) SwitchTurn() {
+func (r *Round) switchTurn() {
 	temp := r.CurrentPlayer
 	r.CurrentPlayer = r.NextPlayer
 	r.NextPlayer = temp
 }
 
-func (r *Round) GetOtherPlayer(p *Player) *Player {
+func (r *Round) getOtherPlayer(p *Player) *Player {
 	if r.CurrentPlayer != p {
 		return r.CurrentPlayer
 	} else if r.NextPlayer != p {
@@ -79,7 +74,7 @@ type Announcement struct {
 	Status   string
 }
 
-func (ann *Announcement) ToPlayerStatus() *ttt.PlayerStatus {
+func (ann *Announcement) toPlayerStatus() *ttt.PlayerStatus {
 	ps := ttt.PlayerStatus{}
 	ps.RoundID = ann.Rd.RoundID
 	ps.PlayerName = ann.ToPlayer.Name
@@ -102,24 +97,14 @@ type TTTServer struct {
 	Announce chan *Announcement // outgoing channel
 }
 
-// func (r *Round) GetPlayer(p string) *Player {
-// 	if r.P1.Name == p {
-// 		return r.P1
-// 	} else if r.P2.Name == p {
-// 		return r.P2
-// 	} else {
-// 		return nil
-// 	}
-// }
-
 func (ttts *TTTServer) ProcessJoin(p *Player) {
 	lock := sync.Mutex{}
 	lock.Lock()
 	defer lock.Unlock()
 	// put into the waiting queue
 	ttts.BenchPlayers.PushBack(p)
-	fmt.Println("push", p.Name, *p, "into waiting list")
-	fmt.Println("waiting list", ttts.BenchPlayers.Len())
+	glog.Info("push ", p.Name, " into waiting list")
+	glog.Info("waiting list size ", ttts.BenchPlayers.Len())
 	if ttts.BenchPlayers.Len() <= 1 {
 		ttts.Announce <- &Announcement{*p, Player{}, Round{},
 			ttt.STATUS_WAIT}
@@ -146,7 +131,7 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 		// end the round and put the other into waiting queue
 		rd := (*ttts.Groups)[p.RoundID]
 		delete(*ttts.Groups, p.RoundID)
-		vs := rd.GetOtherPlayer(p)
+		vs := rd.getOtherPlayer(p)
 		vs.RoundID = ""
 		ttts.ProcessJoin(vs)
 	} else {
@@ -164,51 +149,16 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 }
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
-	ps := a.ToPlayerStatus()
-	fmt.Println("to player: ", a.ToPlayer.Name, "announcement :", ps)
+	ps := a.toPlayerStatus()
+	glog.Info("announce to ", a.ToPlayer.Name, ": ", ps)
 	a.ToPlayer.WS.WriteJSON(ps)
 }
 
-// func (ttts *TTTServer) QuitWaiting(p *Player) {
-// 	lock := sync.Mutex{}
-// 	lock.Lock()
-// 	defer lock.Unlock()
-// 	for e := ttts.BenchPlayers.Front(); e != nil; e = e.Next() {
-// 		if e.Value == p {
-// 			ttts.BenchPlayers.Remove(e)
-// 			break
-// 		}
-// 	}
-// }
-
-// // Remove round from Groups and put the other user into BenchPlayers
-// func (ttts *TTTServer) QuitRound(m *ttt.PlayerAction) {
-// 	rd := (*ttts.Groups)[m.RoundID]
-// 	if &rd == nil {
-// 		return
-// 	}
-// 	toNotify := rd.P1
-// 	if rd.P1.Name == m.PlayerName {
-// 		toNotify = rd.P2
-// 		rd.P1 = nil
-// 	} else {
-// 		rd.P2 = nil
-// 	}
-// 	// ttts.Rounds <- &rd
-
-// 	// TODO: remove round from groups
-
-// 	ttts.ProcessJoin(toNotify)
-// }
-
-// TODO: ttts.Rounds may have a nil player, which means the other player is gone
-
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd := (*ttts.Groups)[m.RoundID]
-	fmt.Println("start judge")
 	if rd.RoundID == "" || rd.CurrentPlayer.Name != m.PlayerName {
 		glog.Info("Invalid move for player ", m.PlayerName)
-		// return
+		return
 	}
 	currentUserStatus := ""
 	nextUserStatus := ""
@@ -224,7 +174,7 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 		nextUserStatus = ttt.STATUS_TIE
 
 	} else {
-		rd.SwitchTurn()
+		rd.switchTurn()
 		(*ttts.Groups)[m.RoundID] = rd
 		currentUserStatus = ttt.STATUS_YOUR_TURN
 		nextUserStatus = ttt.STATUS_WAIT_TURN
@@ -286,7 +236,5 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		ttts.Quit <- p
 	}()
 
-	go p.Act()
-
-	p.ParseAction()
+	p.parseAction()
 }

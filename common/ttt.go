@@ -1,10 +1,6 @@
 package ttt
 
-import (
-	"fmt"
-
-	"github.com/nsf/termbox-go"
-)
+import "github.com/nsf/termbox-go"
 
 const (
 	WIDTH  int = 30
@@ -28,15 +24,16 @@ const (
 	CMD_JOIN string = "JOIN"
 	CMD_MOVE string = "MOVE"
 
-	STATUS_WIN       string = "You win"
-	STATUS_LOSS      string = "You loss"
-	STATUS_TIE       string = "Tie"
-	STATUS_QUIT      string = "You quit"
-	STATUS_WAIT      string = "Waiting for another player"
-	STATUS_LEFT      string = "The other play left"
-	STATUS_MATCHED   string = "Matched"
-	STATUS_YOUR_TURN string = "Your turn"
-	STATUS_WAIT_TURN string = "Other user's turn"
+	STATUS_WIN             string = "You win"
+	STATUS_LOSS            string = "You loss"
+	STATUS_TIE             string = "Tie"
+	STATUS_QUIT            string = "You quit"
+	STATUS_WAIT            string = "Waiting for another player"
+	STATUS_LEFT            string = "The other play left"
+	STATUS_MATCHED         string = "Matched"
+	STATUS_YOUR_TURN       string = "Your turn"
+	STATUS_WAIT_TURN       string = "Other user's turn"
+	STATUS_LOSS_CONNECTION string = "Loss connection from server"
 
 	HELPMSG = `
 Tic-tac-toe manual:
@@ -155,7 +152,6 @@ func (g *Grid) HasSameMarksInRows(p Position, s string) bool {
 		}
 		isSame := true
 		for _, np := range l {
-			fmt.Println(np, g.Get(np), p, g.Get(p))
 			if g.Get(p) != g.Get(np) {
 				isSame = false
 				break
