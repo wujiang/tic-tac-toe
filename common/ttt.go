@@ -1,6 +1,10 @@
 package ttt
 
-import "github.com/nsf/termbox-go"
+import (
+	"fmt"
+
+	"github.com/nsf/termbox-go"
+)
 
 const (
 	WIDTH  int = 30
@@ -17,8 +21,8 @@ const (
 	RIGHT string = "right"
 
 	SPECIALRUNE rune = ' '
-	MYRUNE      rune = 'O'
-	OTHERRUNE   rune = 'X'
+	MYRUNE      rune = 'X'
+	OTHERRUNE   rune = 'O'
 
 	CMD_QUIT string = "QUIT"
 	CMD_JOIN string = "JOIN"
@@ -79,53 +83,90 @@ func (g *Grid) Set(p Position, s string) {
 // - cells in its horizontal row
 // - cells in its vertical row
 // - cells in its diagonal row (if applicable)
-func (g *Grid) NeighborCells(p Position) []Position {
+
+func (g *Grid) hRowNeighbors(p Position) []Position {
 	n := []Position{}
-	// horizontal row
 	for i := 0; i < SIZE; i++ {
 		if i != p.X {
 			n = append(n, Position{i, p.Y})
 		}
 	}
-	// vertical row
+	return n
+}
+
+func (g *Grid) vRowNeighbors(p Position) []Position {
+	n := []Position{}
 	for i := 0; i < SIZE; i++ {
 		if i != p.Y {
 			n = append(n, Position{p.X, i})
 		}
 	}
-	// diagonal row
-	diag := []Position{}
+	return n
+}
+
+func (g *Grid) ldRowNeighbors(p Position) []Position {
+	n := []Position{}
 	isDiagCell := false
 	for i := 0; i < SIZE; i++ {
-		p1 := Position{i, i}
-		p2 := Position{i, SIZE - 1 - i}
-		if p1 == p || p2 == p {
+		lp := Position{i, i}
+		if lp == p {
 			isDiagCell = true
-		}
-		if p1 != p {
-			diag = append(diag, p1)
-		}
-		if p2 != p {
-			diag = append(diag, p2)
+		} else {
+			n = append(n, lp)
 		}
 	}
 	if isDiagCell {
-		n = append(n, diag...)
+		return n
+	} else {
+		return []Position{}
 	}
-	return n
+}
+
+func (g *Grid) rdRowNeighbors(p Position) []Position {
+	n := []Position{}
+	isDiagCell := false
+	for i := 0; i < SIZE; i++ {
+		rp := Position{i, SIZE - 1 - i}
+		if rp == p {
+			isDiagCell = true
+		} else {
+			n = append(n, rp)
+		}
+	}
+	if isDiagCell {
+		return n
+	} else {
+		return []Position{}
+	}
 }
 
 func (g *Grid) HasSameMarksInRows(p Position, s string) bool {
 	g.Set(p, s)
-	ns := g.NeighborCells(p)
-	same := true
-	for _, np := range ns {
-		if p != np {
-			same = false
-			break
+	ns := [][]Position{
+		g.hRowNeighbors(p),
+		g.vRowNeighbors(p),
+		g.ldRowNeighbors(p),
+		g.rdRowNeighbors(p),
+	}
+
+	for _, l := range ns {
+		if len(l) == 0 {
+			continue
+		}
+		isSame := true
+		for _, np := range l {
+			fmt.Println(np, g.Get(np), p, g.Get(p))
+			if g.Get(p) != g.Get(np) {
+				isSame = false
+				break
+			}
+		}
+		if isSame {
+			return true
 		}
 	}
-	return same
+
+	return false
 }
 
 func (g *Grid) IsFull() bool {

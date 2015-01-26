@@ -6,6 +6,7 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/common"
@@ -84,9 +85,9 @@ func SetCell(p ttt.Position, r rune) {
 }
 
 func (tttc *TTTClient) NameToRune(s string) rune {
-	if s == tttc.Name {
+	if s != "" && s == tttc.Name {
 		return ttt.MYRUNE
-	} else if s == tttc.VSName {
+	} else if s != "" && s == tttc.VSName {
 		return ttt.OTHERRUNE
 	} else {
 		return ttt.SPECIALRUNE
@@ -95,8 +96,7 @@ func (tttc *TTTClient) NameToRune(s string) rune {
 
 // Check if a cell is available
 func (tttc *TTTClient) CellIsPinnable(p ttt.Position) bool {
-	// return tttc.RoundID != "" && tttc.Grid.Get(p) == ""
-	return true
+	return tttc.RoundID != "" && tttc.Grid.Get(p) == ""
 }
 
 func (tttc *TTTClient) MoveCursor(direction string) error {
@@ -131,21 +131,26 @@ func (tttc *TTTClient) SetCursor(p ttt.Position) error {
 	return err
 }
 
+func (tttc *TTTClient) isYourTurn() bool {
+	return tttc.Name != "" && tttc.Status == ttt.STATUS_YOUR_TURN
+}
+
 func (tttc *TTTClient) PinCursor(r rune) bool {
-	if tttc.CellIsPinnable(tttc.CursorPos) {
+	if tttc.CellIsPinnable(tttc.CursorPos) && tttc.isYourTurn() {
 		tttc.Grid.Set(tttc.CursorPos, tttc.Name)
-		tttc.SendPin(tttc.CursorPos)
-		return true
+		err := tttc.SendPin(tttc.CursorPos)
+		glog.Info("pincursor err", err)
+		return err == nil
 	} else {
 		return false
 	}
 }
 
 func (tttc *TTTClient) DrawCells() {
-	for x := 0; x < ttt.SIZE; x++ {
-		for y := 0; y < ttt.SIZE; y++ {
+	for x, l := range tttc.Grid {
+		for y, s := range l {
 			p := ttt.Position{x, y}
-			r := tttc.NameToRune(tttc.Grid.Get(p))
+			r := tttc.NameToRune(s)
 			SetCell(p, r)
 		}
 	}
@@ -175,9 +180,11 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
-	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+2, tttc.Status,
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+1, tttc.Name,
+		termbox.ColorYellow)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, tttc.Status,
 		termbox.ColorBlue)
-	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, ttt.HELPMSG, ttt.COLDEF)
+	PrintLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+5, ttt.HELPMSG, ttt.COLDEF)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -187,7 +194,7 @@ func (tttc *TTTClient) RedrawAll() {
 
 func Init() *TTTClient {
 	if err := termbox.Init(); err != nil {
-		panic(err)
+		glog.Fatal(err)
 	}
 
 	termbox.SetInputMode(termbox.InputEsc)
@@ -212,7 +219,17 @@ func (tttc *TTTClient) Connect(s string) error {
 	return nil
 }
 
-// join the wait queue
+func (tttc *TTTClient) SendSimpleCMD(cmd string) error {
+	m := ttt.PlayerAction{
+		tttc.RoundID,
+		tttc.Name,
+		ttt.Position{},
+		cmd,
+	}
+	glog.Info("sending to server:", m)
+	return tttc.Conn.WriteJSON(m)
+}
+
 func (tttc *TTTClient) SendPin(p ttt.Position) error {
 	m := ttt.PlayerAction{
 		tttc.RoundID,
@@ -220,5 +237,36 @@ func (tttc *TTTClient) SendPin(p ttt.Position) error {
 		p,
 		ttt.CMD_MOVE,
 	}
+	glog.Info("sending to server:", m)
 	return tttc.Conn.WriteJSON(m)
+}
+
+func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
+	if tttc.RoundID == "" {
+		tttc.RoundID = s.RoundID
+	} else if tttc.RoundID != s.RoundID {
+		return errors.New("Round IDs do not match")
+	}
+	glog.Info("s", s)
+	tttc.Name = s.PlayerName
+	tttc.VSName = s.VSName
+	tttc.Status = s.Status
+	if s.GridSnap != nil {
+		tttc.Grid = *s.GridSnap
+	}
+	tttc.RedrawAll()
+	return nil
+}
+
+func (tttc *TTTClient) Listener() error {
+	for {
+		status := ttt.PlayerStatus{}
+		err := tttc.Conn.ReadJSON(&status)
+		if err != nil {
+			glog.Info(err)
+		}
+		tttc.Update(status)
+
+	}
+	return nil
 }

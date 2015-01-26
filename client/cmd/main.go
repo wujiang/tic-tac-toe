@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"github.com/golang/glog"
 	"github.com/nsf/termbox-go"
 	"github.com/wujiang/tic-tac-toe/client"
 	"github.com/wujiang/tic-tac-toe/common"
@@ -11,15 +12,17 @@ import (
 // TODO: send PingMessage to server to keep the connection alive
 
 func main() {
-	server := flag.String("s", "ws://localhost:8001/ws", "server")
+	server := flag.String("s", "ws://localhost:8001", "server")
 	flag.Parse()
 
 	tttc := client.Init()
 	defer termbox.Close()
 
 	if err := tttc.Connect(*server); err != nil {
-		panic(err)
+		glog.Fatal("Can not connect to server:")
 	}
+
+	go tttc.Listener()
 
 	tttc.RedrawAll()
 mainloop:
@@ -31,6 +34,7 @@ mainloop:
 			case termbox.KeyEnter:
 				tttc.PinCursor(ttt.MYRUNE)
 			case termbox.KeyEsc:
+				tttc.SendSimpleCMD(ttt.CMD_QUIT)
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				tttc.MoveCursor(ttt.LEFT)
@@ -48,6 +52,7 @@ mainloop:
 			case 'o':
 				tttc.PinCursor(ttt.MYRUNE)
 			case 'q':
+				tttc.SendSimpleCMD(ttt.CMD_QUIT)
 				break mainloop
 			case 'h':
 				tttc.MoveCursor(ttt.LEFT)
@@ -60,7 +65,7 @@ mainloop:
 			}
 
 		case termbox.EventError:
-			panic(ev.Err)
+			glog.Fatal("Termbox EventError:")
 		}
 		tttc.RedrawAll()
 	}

@@ -8,6 +8,7 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 
+	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"github.com/wujiang/tic-tac-toe/common"
 )
@@ -22,21 +23,15 @@ type Player struct {
 func (p *Player) ParseAction() {
 	for {
 		m := ttt.PlayerAction{}
-		err := p.WS.ReadJSON(&m)
-		fmt.Println(m, err)
-		if err != nil {
-			break
-		}
+		_ = p.WS.ReadJSON(&m)
 
 		switch m.Cmd {
 		case ttt.CMD_QUIT:
-			fmt.Println("parse quit")
+			ttts.ProcessQuit(p)
 			break
 		case ttt.CMD_JOIN:
-			fmt.Println("parse join")
 			ttts.ProcessJoin(p)
 		case ttt.CMD_MOVE:
-			fmt.Println("parse move")
 			ttts.Judge(&m)
 		}
 	}
@@ -63,6 +58,16 @@ func (r *Round) SwitchTurn() {
 	temp := r.CurrentPlayer
 	r.CurrentPlayer = r.NextPlayer
 	r.NextPlayer = temp
+}
+
+func (r *Round) GetOtherPlayer(p *Player) *Player {
+	if r.CurrentPlayer != p {
+		return r.CurrentPlayer
+	} else if r.NextPlayer != p {
+		return r.NextPlayer
+	} else {
+		return nil
+	}
 }
 
 type Group map[string]Round
@@ -92,10 +97,9 @@ type TTTServer struct {
 	Groups       *Group
 	BenchPlayers *list.List
 
-	Join        chan *Player           // incoming channel
-	Quit        chan *Player           // incoming channel
-	PlayerMoves chan *ttt.PlayerAction // incoming channel
-	Announce    chan *Announcement     // outgoing channel
+	Join     chan *Player       // incoming channel
+	Quit     chan *Player       // incoming channel
+	Announce chan *Announcement // outgoing channel
 }
 
 // func (r *Round) GetPlayer(p string) *Player {
@@ -126,18 +130,42 @@ func (ttts *TTTServer) ProcessJoin(p *Player) {
 		p2 := ttts.BenchPlayers.Remove(ttts.BenchPlayers.Front())
 		r.CurrentPlayer = p1.(*Player)
 		r.NextPlayer = p2.(*Player)
+		var grid ttt.Grid
+		r.Grid = &grid
 		(*ttts.Groups)[r.RoundID] = r
-		ann1 := Announcement{*r.CurrentPlayer, *r.NextPlayer, r,
+		ttts.Announce <- &Announcement{*r.CurrentPlayer, *r.NextPlayer, r,
 			ttt.STATUS_YOUR_TURN}
-		ann2 := Announcement{*r.NextPlayer, *r.CurrentPlayer, r,
-			ttt.STATUS_WAIT}
-		ttts.Announce <- &ann1
-		ttts.Announce <- &ann2
+		ttts.Announce <- &Announcement{*r.NextPlayer, *r.CurrentPlayer, r,
+			ttt.STATUS_WAIT_TURN}
+
+	}
+}
+
+func (ttts *TTTServer) ProcessQuit(p *Player) {
+	if p.RoundID != "" {
+		// end the round and put the other into waiting queue
+		rd := (*ttts.Groups)[p.RoundID]
+		delete(*ttts.Groups, p.RoundID)
+		vs := rd.GetOtherPlayer(p)
+		vs.RoundID = ""
+		ttts.ProcessJoin(vs)
+	} else {
+		lock := sync.Mutex{}
+		lock.Lock()
+		for e := ttts.BenchPlayers.Front(); e != nil; e = e.Next() {
+			if e.Value.(*Player) == p {
+				ttts.BenchPlayers.Remove(e)
+				break
+			}
+		}
+		lock.Unlock()
+
 	}
 }
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 	ps := a.ToPlayerStatus()
+	fmt.Println("to player: ", a.ToPlayer.Name, "announcement :", ps)
 	a.ToPlayer.WS.WriteJSON(ps)
 }
 
@@ -177,11 +205,14 @@ func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd := (*ttts.Groups)[m.RoundID]
-	if rd.CurrentPlayer.Name != m.PlayerName {
-		return
+	fmt.Println("start judge")
+	if rd.RoundID == "" || rd.CurrentPlayer.Name != m.PlayerName {
+		glog.Info("Invalid move for player ", m.PlayerName)
+		// return
 	}
 	currentUserStatus := ""
 	nextUserStatus := ""
+
 	if rd.Grid.HasSameMarksInRows(m.Pos, m.PlayerName) {
 		rd.Winner = rd.CurrentPlayer
 		ttts.EndRound(m.RoundID)
@@ -198,7 +229,6 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 		currentUserStatus = ttt.STATUS_YOUR_TURN
 		nextUserStatus = ttt.STATUS_WAIT_TURN
 	}
-
 	ttts.Announce <- &Announcement{*rd.CurrentPlayer, *rd.NextPlayer,
 		rd, currentUserStatus}
 	ttts.Announce <- &Announcement{*rd.NextPlayer, *rd.CurrentPlayer,
@@ -217,14 +247,9 @@ func (ttts *TTTServer) EndRound(r string) {
 func (ttts *TTTServer) Daemon() {
 	for {
 		select {
-		case m := <-ttts.PlayerMoves:
-			fmt.Println("process move")
-			ttts.Judge(m)
 		case j := <-ttts.Join:
-			fmt.Println("process join")
 			ttts.ProcessJoin(j)
 		case a := <-ttts.Announce:
-			fmt.Println("process announcement")
 			ttts.ProcessAnnouncement(a)
 		}
 
@@ -240,8 +265,9 @@ func Init() *TTTServer {
 	ttts := TTTServer{}
 	group := make(Group)
 	ttts.BenchPlayers = list.New()
-	ttts.Join = make(chan *Player)
-	ttts.Quit = make(chan *Player)
+	ttts.Join = make(chan *Player, 10)
+	ttts.Quit = make(chan *Player, 10)
+	ttts.Announce = make(chan *Announcement, 10)
 	ttts.Groups = &group
 	go ttts.Daemon()
 	return &ttts
@@ -255,7 +281,6 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := &Player{ws, "", uuid.New()}
-	fmt.Println("Incoming connection", *p)
 	ttts.Join <- p
 	defer func() {
 		ttts.Quit <- p
