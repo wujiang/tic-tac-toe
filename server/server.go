@@ -15,7 +15,9 @@ import (
 type Player struct {
 	WS      *websocket.Conn
 	RoundID string
+	ID      string
 	Name    string
+	Score   int
 }
 
 // Parse the action sent by a client
@@ -29,13 +31,14 @@ func (p *Player) parseAction() {
 			ttts.ProcessQuit(p)
 			break
 		case ttt.CMD_JOIN:
+			p.Name = m.PlayerName
 			ttts.ProcessJoin(p)
 		case ttt.CMD_MOVE:
 			ttts.Judge(&m)
 		}
 	}
 
-	glog.Info("close connection for player ", p.Name)
+	glog.Info("close connection for player ", p.ID)
 	p.WS.Close()
 
 }
@@ -77,8 +80,11 @@ type Announcement struct {
 func (ann *Announcement) toPlayerStatus() *ttt.PlayerStatus {
 	ps := ttt.PlayerStatus{}
 	ps.RoundID = ann.Rd.RoundID
-	ps.PlayerName = ann.ToPlayer.Name
+	ps.PlayerID = ann.ToPlayer.ID
+	ps.PlayerScore = ann.ToPlayer.Score
 	if &ann.VSPlayer != nil {
+		ps.VSID = ann.VSPlayer.ID
+		ps.VSScore = ann.VSPlayer.Score
 		ps.VSName = ann.VSPlayer.Name
 	}
 	ps.Status = ann.Status
@@ -92,7 +98,6 @@ type TTTServer struct {
 	Groups       *Group
 	BenchPlayers *list.List
 
-	Join     chan *Player       // incoming channel
 	Quit     chan *Player       // incoming channel
 	Announce chan *Announcement // outgoing channel
 }
@@ -101,9 +106,8 @@ func (ttts *TTTServer) ProcessJoin(p *Player) {
 	lock := sync.Mutex{}
 	lock.Lock()
 	defer lock.Unlock()
-	// put into the waiting queue
 	ttts.BenchPlayers.PushBack(p)
-	glog.Info("push ", p.Name, " into waiting list")
+	glog.Info("push ", p.ID, " into waiting list")
 	glog.Info("waiting list size ", ttts.BenchPlayers.Len())
 	if ttts.BenchPlayers.Len() <= 1 {
 		ttts.Announce <- &Announcement{*p, Player{}, Round{},
@@ -118,10 +122,10 @@ func (ttts *TTTServer) ProcessJoin(p *Player) {
 		var grid ttt.Grid
 		r.Grid = &grid
 		(*ttts.Groups)[r.RoundID] = r
-		ttts.Announce <- &Announcement{*r.CurrentPlayer, *r.NextPlayer, r,
-			ttt.STATUS_YOUR_TURN}
-		ttts.Announce <- &Announcement{*r.NextPlayer, *r.CurrentPlayer, r,
-			ttt.STATUS_WAIT_TURN}
+		ttts.Announce <- &Announcement{*r.CurrentPlayer, *r.NextPlayer,
+			r, ttt.STATUS_YOUR_TURN}
+		ttts.Announce <- &Announcement{*r.NextPlayer, *r.CurrentPlayer,
+			r, ttt.STATUS_WAIT_TURN}
 
 	}
 }
@@ -150,21 +154,23 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 	ps := a.toPlayerStatus()
-	glog.Info("announce to ", a.ToPlayer.Name, ": ", ps)
+	glog.Info("announce to ", a.ToPlayer.ID, ": ", ps)
 	a.ToPlayer.WS.WriteJSON(ps)
 }
 
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd := (*ttts.Groups)[m.RoundID]
-	if rd.RoundID == "" || rd.CurrentPlayer.Name != m.PlayerName {
-		glog.Info("Invalid move for player ", m.PlayerName)
+	if rd.RoundID == "" || rd.CurrentPlayer.ID != m.PlayerID {
+		glog.Info("Invalid move for player ", m.PlayerID)
 		return
 	}
 	currentUserStatus := ""
 	nextUserStatus := ""
 
-	if rd.Grid.HasSameMarksInRows(m.Pos, m.PlayerName) {
+	if rd.Grid.HasSameMarksInRows(m.Pos, m.PlayerID) {
 		rd.Winner = rd.CurrentPlayer
+		rd.CurrentPlayer.Score += 1
+		rd.NextPlayer.Score -= 1
 		ttts.EndRound(m.RoundID)
 		currentUserStatus = ttt.STATUS_WIN
 		nextUserStatus = ttt.STATUS_LOSS
@@ -197,8 +203,6 @@ func (ttts *TTTServer) EndRound(r string) {
 func (ttts *TTTServer) Daemon() {
 	for {
 		select {
-		case j := <-ttts.Join:
-			ttts.ProcessJoin(j)
 		case a := <-ttts.Announce:
 			ttts.ProcessAnnouncement(a)
 		}
@@ -215,7 +219,6 @@ func Init() *TTTServer {
 	ttts := TTTServer{}
 	group := make(Group)
 	ttts.BenchPlayers = list.New()
-	ttts.Join = make(chan *Player, 10)
 	ttts.Quit = make(chan *Player, 10)
 	ttts.Announce = make(chan *Announcement, 10)
 	ttts.Groups = &group
@@ -230,8 +233,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	p := &Player{ws, "", uuid.New()}
-	ttts.Join <- p
+	p := &Player{ws, "", uuid.New(), "", 0}
 	defer func() {
 		ttts.Quit <- p
 	}()

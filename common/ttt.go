@@ -36,7 +36,6 @@ const (
 	STATUS_LOSS_CONNECTION string = "Loss connection from server"
 
 	HELPMSG = `
-Tic-tac-toe manual:
 - LEFT: h, ctrl-b, arrow-left
 - DOWN: j, ctrl-n, arrow-down
 - UP: k, ctrl-p, arrow-up
@@ -55,17 +54,22 @@ type Grid [SIZE][SIZE]string
 
 type PlayerAction struct {
 	RoundID    string   `json:"round_id,omitempty"`
+	PlayerID   string   `json:"player_id,omitempty"`
 	PlayerName string   `json:"player_name,omitempty"`
 	Pos        Position `json:"position"`
 	Cmd        string   `json:"cmd"`
 }
 
 type PlayerStatus struct {
-	RoundID    string `json:"round_id,omitempty"`
-	PlayerName string `json:"player_name,omitempty"`
-	VSName     string `json:"vs_name,omitempty"`
-	Status     string `json:"status"`
-	GridSnap   *Grid  `json:"grid_snap"`
+	RoundID     string `json:"round_id,omitempty"`
+	PlayerName  string `json:"player_name,omitempty"`
+	PlayerID    string `json:"player_id,omitempty"`
+	PlayerScore int    `json:"player_score,omitempty"`
+	VSID        string `json:"vs_id,omitempty"`
+	VSName      string `json:"vs_name,omitempty"`
+	VSScore     int    `json:"score,omitempty"`
+	Status      string `json:"status"`
+	GridSnap    *Grid  `json:"grid_snap"`
 }
 
 func (g *Grid) Get(p Position) string {

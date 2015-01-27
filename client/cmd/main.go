@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os/user"
 
 	"github.com/golang/glog"
 	"github.com/nsf/termbox-go"
@@ -12,10 +13,18 @@ import (
 // TODO: send PingMessage to server to keep the connection alive
 
 func main() {
+	systemUser, err := user.Current()
+	var username string
+	if err != nil {
+		username = "Unknown"
+	} else {
+		username = systemUser.Username
+	}
 	server := flag.String("s", "ws://localhost:8001", "server")
+	name := flag.String("u", username, "user name")
 	flag.Parse()
 
-	tttc := client.Init()
+	tttc := client.Init(*name)
 	defer termbox.Close()
 
 	if err := tttc.Connect(*server); err != nil {
@@ -44,7 +53,8 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				tttc.MoveCursor(ttt.RIGHT)
-
+			case termbox.KeyCtrlO:
+				tttc.Join()
 			}
 
 			// vim key bindings
@@ -62,6 +72,8 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case 'l':
 				tttc.MoveCursor(ttt.RIGHT)
+			case 'r':
+				tttc.Join()
 			}
 
 		case termbox.EventError:

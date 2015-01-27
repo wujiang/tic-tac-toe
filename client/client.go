@@ -1,10 +1,10 @@
 package client
 
 import (
+	"bytes"
 	"errors"
 	"net/http"
-
-	"code.google.com/p/go-uuid/uuid"
+	"strconv"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
@@ -13,13 +13,17 @@ import (
 )
 
 const (
-	WAIT_STATUS string = "Waiting for another player"
+	NAME_LENGTH_LIMIT = 8
 )
 
 type TTTClient struct {
 	Name      string
+	ID        string
+	Score     int
 	Conn      *websocket.Conn
+	VSID      string
 	VSName    string
+	VSScore   int
 	RoundID   string
 	Status    string
 	CursorPos ttt.Position // cursor position
@@ -85,9 +89,9 @@ func setCell(p ttt.Position, r rune) {
 }
 
 func (tttc *TTTClient) nameToRune(s string) rune {
-	if s != "" && s == tttc.Name {
+	if s != "" && s == tttc.ID {
 		return ttt.MYRUNE
-	} else if s != "" && s == tttc.VSName {
+	} else if s != "" && s == tttc.VSID {
 		return ttt.OTHERRUNE
 	} else {
 		return ttt.SPECIALRUNE
@@ -132,12 +136,12 @@ func (tttc *TTTClient) SetCursor(p ttt.Position) error {
 }
 
 func (tttc *TTTClient) isYourTurn() bool {
-	return tttc.Name != "" && tttc.Status == ttt.STATUS_YOUR_TURN
+	return tttc.ID != "" && tttc.Status == ttt.STATUS_YOUR_TURN
 }
 
 func (tttc *TTTClient) PinCursor(r rune) bool {
 	if tttc.cellIsPinnable(tttc.CursorPos) && tttc.isYourTurn() {
-		tttc.Grid.Set(tttc.CursorPos, tttc.Name)
+		tttc.Grid.Set(tttc.CursorPos, tttc.ID)
 		err := tttc.SendPin(tttc.CursorPos)
 		return err == nil
 	} else {
@@ -153,6 +157,20 @@ func (tttc *TTTClient) drawCells() {
 			setCell(p, r)
 		}
 	}
+}
+
+func (tttc *TTTClient) userScores() string {
+	var buffer bytes.Buffer
+	buffer.WriteString(tttc.Name)
+	buffer.WriteString(": ")
+	buffer.WriteString(strconv.Itoa(tttc.Score))
+	if tttc.VSName != "" {
+		buffer.WriteString(" VS ")
+		buffer.WriteString(tttc.VSName)
+		buffer.WriteString(": ")
+		buffer.WriteString(strconv.Itoa(tttc.VSScore))
+	}
+	return buffer.String()
 }
 
 func (tttc *TTTClient) RedrawAll() {
@@ -179,9 +197,11 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
-	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+3, tttc.Status,
+	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+2, tttc.userScores(),
+		ttt.COLDEF)
+	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+4, tttc.Status,
 		termbox.ColorBlue)
-	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+5, ttt.HELPMSG, ttt.COLDEF)
+	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+6, ttt.HELPMSG, ttt.COLDEF)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -189,7 +209,7 @@ func (tttc *TTTClient) RedrawAll() {
 	termbox.Flush()
 }
 
-func Init() *TTTClient {
+func Init(name string) *TTTClient {
 	if err := termbox.Init(); err != nil {
 		glog.Fatal(err)
 	}
@@ -197,10 +217,11 @@ func Init() *TTTClient {
 	termbox.SetInputMode(termbox.InputEsc)
 	center := getCenter()
 	tttc := TTTClient{}
-	tttc.Name = uuid.New()
-
-	tttc.VSName = uuid.New()
-
+	if len(name) > NAME_LENGTH_LIMIT {
+		tttc.Name = name[:NAME_LENGTH_LIMIT]
+	} else {
+		tttc.Name = name
+	}
 	tttc.CursorPos = center
 	return &tttc
 }
@@ -212,12 +233,14 @@ func (tttc *TTTClient) Connect(s string) error {
 		return err
 	}
 	tttc.Conn = ws
+	tttc.Join()
 	return nil
 }
 
 func (tttc *TTTClient) SendSimpleCMD(cmd string) error {
 	m := ttt.PlayerAction{
 		tttc.RoundID,
+		tttc.ID,
 		tttc.Name,
 		ttt.Position{},
 		cmd,
@@ -228,6 +251,7 @@ func (tttc *TTTClient) SendSimpleCMD(cmd string) error {
 func (tttc *TTTClient) SendPin(p ttt.Position) error {
 	m := ttt.PlayerAction{
 		tttc.RoundID,
+		tttc.ID,
 		tttc.Name,
 		p,
 		ttt.CMD_MOVE,
@@ -241,14 +265,27 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	} else if s.RoundID != "" && tttc.RoundID != s.RoundID {
 		return errors.New("Round IDs do not match")
 	}
-	tttc.Name = s.PlayerName
+	tttc.ID = s.PlayerID
+	tttc.Score = s.PlayerScore
+	tttc.VSID = s.VSID
 	tttc.VSName = s.VSName
+	tttc.VSScore = s.VSScore
 	tttc.Status = s.Status
 	if s.GridSnap != nil {
 		tttc.Grid = *s.GridSnap
 	}
 	tttc.RedrawAll()
 	return nil
+}
+
+func (tttc *TTTClient) Join() error {
+	if tttc.RoundID != "" {
+		if err := tttc.SendSimpleCMD(ttt.CMD_QUIT); err != nil {
+			return nil
+		}
+	}
+	err := tttc.SendSimpleCMD(ttt.CMD_JOIN)
+	return err
 }
 
 func (tttc *TTTClient) Listener() error {
@@ -260,7 +297,11 @@ func (tttc *TTTClient) Listener() error {
 			status = ttt.PlayerStatus{
 				tttc.RoundID,
 				tttc.Name,
+				tttc.ID,
+				tttc.Score,
+				tttc.VSID,
 				tttc.VSName,
+				tttc.VSScore,
 				ttt.STATUS_LOSS_CONNECTION,
 				&tttc.Grid,
 			}
