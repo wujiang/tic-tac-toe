@@ -31,6 +31,8 @@ func main() {
 		glog.Fatal("Can not connect to server:")
 	}
 
+	tttc.Join()
+
 	go tttc.Listener()
 
 	tttc.RedrawAll()
@@ -53,13 +55,13 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				tttc.MoveCursor(ttt.RIGHT)
-			case termbox.KeyCtrlO:
+			case termbox.KeyCtrlJ:
 				tttc.Join()
 			}
 
 			// vim key bindings
 			switch ev.Ch {
-			case 'o':
+			case 'i':
 				tttc.PinCursor(ttt.MYRUNE)
 			case 'q':
 				tttc.SendSimpleCMD(ttt.CMD_QUIT)
@@ -72,7 +74,7 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case 'l':
 				tttc.MoveCursor(ttt.RIGHT)
-			case 'r':
+			case 'O':
 				tttc.Join()
 			}
 

@@ -233,7 +233,6 @@ func (tttc *TTTClient) Connect(s string) error {
 		return err
 	}
 	tttc.Conn = ws
-	tttc.Join()
 	return nil
 }
 
@@ -260,10 +259,11 @@ func (tttc *TTTClient) SendPin(p ttt.Position) error {
 }
 
 func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
-	if tttc.RoundID == "" {
+	if s.RoundID != "" && tttc.RoundID != s.RoundID &&
+		!ttt.IsOverStatus(tttc.Status) {
+		glog.Warning("Round IDs do not match")
+	} else {
 		tttc.RoundID = s.RoundID
-	} else if s.RoundID != "" && tttc.RoundID != s.RoundID {
-		return errors.New("Round IDs do not match")
 	}
 	tttc.ID = s.PlayerID
 	tttc.Score = s.PlayerScore
@@ -279,10 +279,8 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 }
 
 func (tttc *TTTClient) Join() error {
-	if tttc.RoundID != "" {
-		if err := tttc.SendSimpleCMD(ttt.CMD_QUIT); err != nil {
-			return nil
-		}
+	if !ttt.IsOverStatus(tttc.Status) {
+		return errors.New("This round is not over yet.")
 	}
 	err := tttc.SendSimpleCMD(ttt.CMD_JOIN)
 	return err
@@ -293,7 +291,7 @@ func (tttc *TTTClient) Listener() error {
 		status := ttt.PlayerStatus{}
 		err := tttc.Conn.ReadJSON(&status)
 		if err != nil {
-			glog.Warning(err)
+			glog.Warning(tttc.ID, ", ", err)
 			status = ttt.PlayerStatus{
 				tttc.RoundID,
 				tttc.Name,

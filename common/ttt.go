@@ -20,10 +20,13 @@ const (
 	MYRUNE      rune = 'X'
 	OTHERRUNE   rune = 'O'
 
-	CMD_QUIT string = "QUIT"
-	CMD_JOIN string = "JOIN"
-	CMD_MOVE string = "MOVE"
+	CMD_QUIT      string = "Quit"
+	CMD_JOIN      string = "Join"
+	CMD_MOVE      string = "Move"
+	CMD_NEW_ROUND string = "New round"
+	CMD_REMATCH   string = "Rematch"
 
+	STATUS_INIT            string = ""
 	STATUS_WIN             string = "You win"
 	STATUS_LOSS            string = "You loss"
 	STATUS_TIE             string = "Tie"
@@ -45,32 +48,30 @@ const (
 `
 )
 
+var OVER_STATUSES = []string{
+	STATUS_INIT,
+	STATUS_WIN,
+	STATUS_LOSS,
+	STATUS_TIE,
+	STATUS_LEFT,
+	STATUS_WAIT,
+}
+
+func IsOverStatus(s string) bool {
+	for _, st := range OVER_STATUSES {
+		if s == st {
+			return true
+		}
+	}
+	return false
+}
+
 type Position struct {
 	X int `json:"x"`
 	Y int `json:"y"`
 }
 
 type Grid [SIZE][SIZE]string
-
-type PlayerAction struct {
-	RoundID    string   `json:"round_id,omitempty"`
-	PlayerID   string   `json:"player_id,omitempty"`
-	PlayerName string   `json:"player_name,omitempty"`
-	Pos        Position `json:"position"`
-	Cmd        string   `json:"cmd"`
-}
-
-type PlayerStatus struct {
-	RoundID     string `json:"round_id,omitempty"`
-	PlayerName  string `json:"player_name,omitempty"`
-	PlayerID    string `json:"player_id,omitempty"`
-	PlayerScore int    `json:"player_score,omitempty"`
-	VSID        string `json:"vs_id,omitempty"`
-	VSName      string `json:"vs_name,omitempty"`
-	VSScore     int    `json:"score,omitempty"`
-	Status      string `json:"status"`
-	GridSnap    *Grid  `json:"grid_snap"`
-}
 
 func (g *Grid) Get(p Position) string {
 	return g[p.X][p.Y]
@@ -178,4 +179,24 @@ func (g *Grid) IsFull() bool {
 		}
 	}
 	return true
+}
+
+type PlayerAction struct {
+	RoundID    string   `json:"round_id,omitempty"`
+	PlayerID   string   `json:"player_id,omitempty"`
+	PlayerName string   `json:"player_name,omitempty"`
+	Pos        Position `json:"position"`
+	Cmd        string   `json:"cmd"`
+}
+
+type PlayerStatus struct {
+	RoundID     string `json:"round_id,omitempty"`
+	PlayerName  string `json:"player_name,omitempty"`
+	PlayerID    string `json:"player_id,omitempty"`
+	PlayerScore int    `json:"player_score,omitempty"`
+	VSID        string `json:"vs_id,omitempty"`
+	VSName      string `json:"vs_name,omitempty"`
+	VSScore     int    `json:"score,omitempty"`
+	Status      string `json:"status"`
+	GridSnap    *Grid  `json:"grid_snap"`
 }
