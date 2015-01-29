@@ -14,6 +14,11 @@ import (
 	"github.com/wujiang/tic-tac-toe/common"
 )
 
+const (
+	READ_BUFFER_SIZE  int = 1024
+	WRITE_BUFFER_SIZE int = 2048
+)
+
 type Player struct {
 	WS      *websocket.Conn
 	RoundID string
