@@ -1,6 +1,10 @@
 package ttt
 
-import "github.com/nsf/termbox-go"
+import (
+	"encoding/json"
+
+	"github.com/nsf/termbox-go"
+)
 
 const (
 	WIDTH  int = 30
@@ -32,7 +36,7 @@ const (
 	STATUS_TIE             string = "Tie"
 	STATUS_QUIT            string = "You quit"
 	STATUS_WAIT            string = "Waiting for another player"
-	STATUS_LEFT            string = "The other play left"
+	STATUS_OTHER_LEFT      string = "The other player left"
 	STATUS_MATCHED         string = "Matched"
 	STATUS_YOUR_TURN       string = "Your turn"
 	STATUS_WAIT_TURN       string = "Other user's turn"
@@ -44,7 +48,8 @@ const (
 - UP: k, ctrl-p, arrow-up
 - RIGHT: l, ctrl-f, arrow-right
 - EXIT: q, esc
-- ENTER: o, enter
+- ENTER: i, enter
+- NEW GAME: O, ctrl-j
 `
 )
 
@@ -53,7 +58,7 @@ var OVER_STATUSES = []string{
 	STATUS_WIN,
 	STATUS_LOSS,
 	STATUS_TIE,
-	STATUS_LEFT,
+	STATUS_OTHER_LEFT,
 	STATUS_WAIT,
 }
 
@@ -199,4 +204,13 @@ type PlayerStatus struct {
 	VSScore     int    `json:"score,omitempty"`
 	Status      string `json:"status"`
 	GridSnap    *Grid  `json:"grid_snap"`
+}
+
+func (s *PlayerStatus) Repr() string {
+	r, err := json.Marshal(s)
+	if err == nil {
+		return string(r[:])
+	} else {
+		return ""
+	}
 }

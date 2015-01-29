@@ -16,20 +16,6 @@ const (
 	NAME_LENGTH_LIMIT = 8
 )
 
-type TTTClient struct {
-	Name      string
-	ID        string
-	Score     int
-	Conn      *websocket.Conn
-	VSID      string
-	VSName    string
-	VSScore   int
-	RoundID   string
-	Status    string
-	CursorPos ttt.Position // cursor position
-	Grid      ttt.Grid
-}
-
 func fill(x, y, w, h int, r rune) {
 	for ly := 0; ly < h; ly++ {
 		for lx := 0; lx < w; lx++ {
@@ -86,6 +72,20 @@ func setCell(p ttt.Position, r rune) {
 		termbox.SetCell(tbPos.X, tbPos.Y, r, ttt.COLDEF, ttt.COLDEF)
 	}
 
+}
+
+type TTTClient struct {
+	Name      string
+	ID        string
+	Score     int
+	Conn      *websocket.Conn
+	VSID      string
+	VSName    string
+	VSScore   int
+	RoundID   string
+	Status    string
+	CursorPos ttt.Position
+	Grid      ttt.Grid
 }
 
 func (tttc *TTTClient) nameToRune(s string) rune {
@@ -209,23 +209,6 @@ func (tttc *TTTClient) RedrawAll() {
 	termbox.Flush()
 }
 
-func Init(name string) *TTTClient {
-	if err := termbox.Init(); err != nil {
-		glog.Fatal(err)
-	}
-
-	termbox.SetInputMode(termbox.InputEsc)
-	center := getCenter()
-	tttc := TTTClient{}
-	if len(name) > NAME_LENGTH_LIMIT {
-		tttc.Name = name[:NAME_LENGTH_LIMIT]
-	} else {
-		tttc.Name = name
-	}
-	tttc.CursorPos = center
-	return &tttc
-}
-
 func (tttc *TTTClient) Connect(s string) error {
 	dialer := websocket.DefaultDialer
 	ws, _, err := dialer.Dial(s, http.Header{})
@@ -313,4 +296,21 @@ func (tttc *TTTClient) Listener() error {
 
 	}
 	return nil
+}
+
+func Init(name string) *TTTClient {
+	if err := termbox.Init(); err != nil {
+		glog.Fatal(err)
+	}
+
+	termbox.SetInputMode(termbox.InputEsc)
+	center := getCenter()
+	tttc := TTTClient{}
+	if len(name) > NAME_LENGTH_LIMIT {
+		tttc.Name = name[:NAME_LENGTH_LIMIT]
+	} else {
+		tttc.Name = name
+	}
+	tttc.CursorPos = center
+	return &tttc
 }

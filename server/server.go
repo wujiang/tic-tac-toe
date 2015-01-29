@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +26,10 @@ type Player struct {
 	ID      string
 	Name    string
 	Score   int
+}
+
+func (p *Player) repr() string {
+	return p.Name + " (" + p.ID + ")"
 }
 
 // Parse the action sent by a client
@@ -84,7 +89,7 @@ func (q *PlayersQueue) Remove(p *Player) {
 }
 
 type Round struct {
-	RoundID       string
+	ID            string
 	CurrentPlayer *Player
 	NextPlayer    *Player
 	Winner        *Player
@@ -115,9 +120,21 @@ type Announcement struct {
 	Status   string
 }
 
+func (ann *Announcement) repr() string {
+	repr := []string{}
+	if ann.Rd != (Round{}) {
+		repr = append(repr, "round = "+ann.Rd.ID)
+	}
+	if ann.VSPlayer != (Player{}) {
+		repr = append(repr, "vs = "+ann.VSPlayer.repr())
+	}
+	repr = append(repr, "status = "+ann.Status)
+	return strings.Join(repr, ", ")
+}
+
 func (ann *Announcement) toPlayerStatus() *ttt.PlayerStatus {
 	ps := ttt.PlayerStatus{}
-	ps.RoundID = ann.Rd.RoundID
+	ps.RoundID = ann.Rd.ID
 	ps.PlayerID = ann.ToPlayer.ID
 	ps.PlayerScore = ann.ToPlayer.Score
 	if &ann.VSPlayer != nil {
@@ -153,19 +170,27 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 		nextPlayer = p1
 	}
 	r := Round{
-		RoundID:       uuid.New(),
+		ID:            uuid.New(),
 		CurrentPlayer: currentPlayer,
 		NextPlayer:    nextPlayer,
 		Winner:        nil,
 		Grid:          &grid,
 	}
-	currentPlayer.RoundID = r.RoundID
-	nextPlayer.RoundID = r.RoundID
-	(*ttts.Groups)[r.RoundID] = r
-	ttts.Announce <- &Announcement{*r.CurrentPlayer, *r.NextPlayer,
-		r, ttt.STATUS_YOUR_TURN}
-	ttts.Announce <- &Announcement{*r.NextPlayer, *r.CurrentPlayer,
-		r, ttt.STATUS_WAIT_TURN}
+	currentPlayer.RoundID = r.ID
+	nextPlayer.RoundID = r.ID
+	(*ttts.Groups)[r.ID] = r
+	ttts.Announce <- &Announcement{
+		ToPlayer: *r.CurrentPlayer,
+		VSPlayer: *r.NextPlayer,
+		Rd:       r,
+		Status:   ttt.STATUS_YOUR_TURN,
+	}
+	ttts.Announce <- &Announcement{
+		ToPlayer: *r.NextPlayer,
+		VSPlayer: *r.CurrentPlayer,
+		Rd:       r,
+		Status:   ttt.STATUS_WAIT_TURN,
+	}
 	return r
 }
 
@@ -182,11 +207,12 @@ func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
 		p1 := ttts.BenchPlayers.Pop()
 		p2 := ttts.BenchPlayers.Pop()
 		ttts.createNewRound(p1, p2)
-		glog.Info("New round between ", p1.Name, "(", p1.ID,
-			") and ", p2.Name, "(", p2.ID, ")")
+		glog.Info("new round between ", p1.repr(), " and ",
+			p2.repr())
 	}
 	if isNew {
 		ttts.Players.Push(p)
+		glog.Info("new player ", p.repr(), " joins")
 	}
 	glog.Info("total players ", ttts.Players.Len())
 }
@@ -199,26 +225,30 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 		if rd != (Round{}) {
 			delete(*ttts.Groups, p.RoundID)
 			vs := rd.getOtherPlayer(p)
-			vs.RoundID = ""
-			ttts.ProcessJoin(vs, false)
+			ttts.Announce <- &Announcement{
+				ToPlayer: *vs,
+				VSPlayer: Player{},
+				Rd:       Round{},
+				Status:   ttt.STATUS_OTHER_LEFT,
+			}
 		}
 	} else {
 		ttts.BenchPlayers.Remove(p)
 	}
-	glog.Info("close connection for player ", p.Name, "(", p.ID, ")")
+	glog.Info("close connection for player ", p.repr())
 	p.WS.Close()
 }
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 	ps := a.toPlayerStatus()
-	glog.Info("announce to ", a.ToPlayer.ID, ps)
+	glog.Info("announce to ", a.ToPlayer.repr(), " ", ps.Repr())
 	a.ToPlayer.WS.WriteJSON(ps)
 }
 
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd := (*ttts.Groups)[m.RoundID]
-	if rd.RoundID == "" || rd.CurrentPlayer.ID != m.PlayerID {
-		glog.Info("Invalid move for player ", m.PlayerID, rd.RoundID, rd.CurrentPlayer)
+	if rd.ID == "" || rd.CurrentPlayer.ID != m.PlayerID {
+		glog.Info("Invalid move for player ", rd.CurrentPlayer.repr())
 		return
 	}
 	currentUserStatus := ""
