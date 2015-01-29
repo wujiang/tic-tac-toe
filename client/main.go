@@ -30,8 +30,6 @@ func main() {
 		glog.Exitln("Can not connect to server")
 	}
 
-	tttc.Join()
-
 	go tttc.Listener()
 
 	tttc.RedrawAll()
@@ -41,10 +39,10 @@ mainloop:
 		case termbox.EventKey:
 			// arrows ane emacs key bindings
 			switch ev.Key {
-			case termbox.KeyEnter:
+			case termbox.KeyEnter, termbox.KeySpace:
 				tttc.PinCursor(ttt.MYRUNE)
 			case termbox.KeyEsc:
-				tttc.SendSimpleCMD(ttt.CMD_QUIT)
+				tttc.Quit()
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
 				tttc.MoveCursor(ttt.LEFT)
@@ -54,8 +52,10 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
 				tttc.MoveCursor(ttt.RIGHT)
-			case termbox.KeyCtrlJ:
-				tttc.Join()
+			case termbox.KeyF1:
+				tttc.Join(true)
+			case termbox.KeyF2:
+				tttc.Join(false)
 			}
 
 			// vim key bindings
@@ -63,7 +63,7 @@ mainloop:
 			case 'i':
 				tttc.PinCursor(ttt.MYRUNE)
 			case 'q':
-				tttc.SendSimpleCMD(ttt.CMD_QUIT)
+				tttc.Quit()
 				break mainloop
 			case 'h':
 				tttc.MoveCursor(ttt.LEFT)
@@ -73,8 +73,6 @@ mainloop:
 				tttc.MoveCursor(ttt.UP)
 			case 'l':
 				tttc.MoveCursor(ttt.RIGHT)
-			case 'O':
-				tttc.Join()
 			}
 
 		case termbox.EventError:

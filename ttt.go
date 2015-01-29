@@ -24,13 +24,16 @@ const (
 	MYRUNE      rune = 'X'
 	OTHERRUNE   rune = 'O'
 
-	CMD_QUIT      string = "Quit"
-	CMD_JOIN      string = "Join"
-	CMD_MOVE      string = "Move"
-	CMD_NEW_ROUND string = "New round"
-	CMD_REMATCH   string = "Rematch"
+	CMD_QUIT       string = "Quit"
+	CMD_JOIN       string = "Join"
+	CMD_JOIN_AI    string = "Join AI"
+	CMD_MOVE       string = "Move"
+	CMD_NEW_ROUND  string = "New round"
+	CMD_REMATCH    string = "Rematch"
+	CMD_REMATCH_AI string = "Rematch AI"
 
 	STATUS_INIT            string = ""
+	STATUS_CONNECTED       string = "Connected to server"
 	STATUS_WIN             string = "You win"
 	STATUS_LOSS            string = "You loss"
 	STATUS_TIE             string = "Tie"
@@ -48,13 +51,15 @@ const (
 - UP: k, ctrl-p, arrow-up
 - RIGHT: l, ctrl-f, arrow-right
 - EXIT: q, esc
-- ENTER: i, enter
-- NEW GAME: O, ctrl-j
+- ENTER: i, enter, space
+- 1 PERSON GAME: f1
+- 2 PERSON GAME: f2
 `
 )
 
 var OVER_STATUSES = []string{
 	STATUS_INIT,
+	STATUS_CONNECTED,
 	STATUS_WIN,
 	STATUS_LOSS,
 	STATUS_TIE,

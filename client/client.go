@@ -264,12 +264,19 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	return nil
 }
 
-func (tttc *TTTClient) Join() error {
+func (tttc *TTTClient) Join(withAI bool) error {
 	if !ttt.IsOverStatus(tttc.Status) {
+		glog.Warningln("cannot rematch before this round is over")
 		return errors.New("This round is not over yet.")
 	}
-	err := tttc.SendSimpleCMD(ttt.CMD_JOIN)
-	return err
+	if withAI {
+		return tttc.SendSimpleCMD(ttt.CMD_JOIN_AI)
+	}
+	return tttc.SendSimpleCMD(ttt.CMD_JOIN)
+}
+
+func (tttc *TTTClient) Quit() error {
+	return tttc.SendSimpleCMD(ttt.CMD_QUIT)
 }
 
 func (tttc *TTTClient) Listener() error {

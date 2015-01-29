@@ -43,6 +43,9 @@ func (p *Player) parseAction() {
 			return
 		case ttt.CMD_JOIN:
 			p.Name = m.PlayerName
+			ttts.ProcessJoin(p, false)
+		case ttt.CMD_JOIN_AI:
+			p.Name = m.PlayerName
 			ttts.ProcessJoin(p, true)
 		case ttt.CMD_MOVE:
 			ttts.Judge(&m)
@@ -152,9 +155,10 @@ func (ann *Announcement) toPlayerStatus() *ttt.PlayerStatus {
 type Group map[string]Round
 
 type TTTServer struct {
-	Players      *PlayersQueue
+	Players      *map[string]*Player
 	Groups       *Group
 	BenchPlayers *PlayersQueue
+	AIPlayers    *PlayersQueue
 
 	Announce chan *Announcement // outgoing channel
 }
@@ -194,8 +198,14 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 	return r
 }
 
-func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
-	ttts.BenchPlayers.Push(p)
+func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
+	if withAI {
+		ttts.AIPlayers.Remove(p)
+		ttts.AIPlayers.Push(p)
+	} else {
+		ttts.BenchPlayers.Remove(p)
+		ttts.BenchPlayers.Push(p)
+	}
 	ttts.Announce <- &Announcement{
 		ToPlayer: *p,
 		VSPlayer: Player{},
@@ -210,15 +220,12 @@ func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
 		glog.Infoln("new round between", p1.repr(), "and",
 			p2.repr())
 	}
-	if isNew {
-		ttts.Players.Push(p)
-		glog.Infoln("new player", p.repr(), "joins")
-	}
-	glog.Infoln("total players", ttts.Players.Len())
+	(*ttts.Players)[p.ID] = p
+	glog.Infoln("total players", len((*ttts.Players)))
 }
 
 func (ttts *TTTServer) ProcessQuit(p *Player) {
-	ttts.Players.Remove(p)
+	delete((*ttts.Players), p.Name)
 	if p.RoundID != "" {
 		rd := (*ttts.Groups)[p.RoundID]
 		// end the round and put the other into waiting queue
@@ -309,15 +316,19 @@ var upgrader = &websocket.Upgrader{
 func Init() *TTTServer {
 	ttts := TTTServer{}
 	group := make(Group)
-	ttts.Players = &PlayersQueue{
-		players: list.New(),
-		lock:    sync.Mutex{},
-	}
+	players := make(map[string]*Player)
+	ttts.Players = &players
 
 	ttts.BenchPlayers = &PlayersQueue{
 		players: list.New(),
 		lock:    sync.Mutex{},
 	}
+
+	ttts.AIPlayers = &PlayersQueue{
+		players: list.New(),
+		lock:    sync.Mutex{},
+	}
+
 	ttts.Announce = make(chan *Announcement, 10)
 	ttts.Groups = &group
 	go ttts.Daemon()
@@ -332,5 +343,11 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := &Player{ws, "", uuid.New(), "", 0}
+	ttts.Announce <- &Announcement{
+		ToPlayer: *p,
+		VSPlayer: Player{},
+		Rd:       Round{},
+		Status:   ttt.STATUS_CONNECTED,
+	}
 	p.parseAction()
 }
