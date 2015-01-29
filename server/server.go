@@ -189,12 +189,14 @@ func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
 func (ttts *TTTServer) ProcessQuit(p *Player) {
 	ttts.Players.Remove(p)
 	if p.RoundID != "" {
-		// end the round and put the other into waiting queue
 		rd := (*ttts.Groups)[p.RoundID]
-		delete(*ttts.Groups, p.RoundID)
-		vs := rd.getOtherPlayer(p)
-		vs.RoundID = ""
-		ttts.ProcessJoin(vs, false)
+		// end the round and put the other into waiting queue
+		if rd != (Round{}) {
+			delete(*ttts.Groups, p.RoundID)
+			vs := rd.getOtherPlayer(p)
+			vs.RoundID = ""
+			ttts.ProcessJoin(vs, false)
+		}
 	} else {
 		ttts.BenchPlayers.Remove(p)
 	}
