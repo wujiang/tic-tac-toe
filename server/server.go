@@ -36,6 +36,7 @@ func (p *Player) parseAction() {
 			ttts.ProcessJoin(p, true)
 		case ttt.CMD_MOVE:
 			ttts.Judge(&m)
+		default:
 		}
 	}
 }
@@ -165,8 +166,12 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 
 func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
 	ttts.BenchPlayers.Push(p)
-	ttts.Announce <- &Announcement{*p, Player{}, Round{},
-		ttt.STATUS_WAIT}
+	ttts.Announce <- &Announcement{
+		ToPlayer: *p,
+		VSPlayer: Player{},
+		Rd:       Round{},
+		Status:   ttt.STATUS_WAIT,
+	}
 	glog.Info("waiting list size ", ttts.BenchPlayers.Len())
 	if ttts.BenchPlayers.Len() >= 2 {
 		p1 := ttts.BenchPlayers.Pop()
@@ -229,10 +234,18 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 		currentUserStatus = ttt.STATUS_YOUR_TURN
 		nextUserStatus = ttt.STATUS_WAIT_TURN
 	}
-	ttts.Announce <- &Announcement{*rd.CurrentPlayer, *rd.NextPlayer,
-		rd, currentUserStatus}
-	ttts.Announce <- &Announcement{*rd.NextPlayer, *rd.CurrentPlayer,
-		rd, nextUserStatus}
+	ttts.Announce <- &Announcement{
+		ToPlayer: *rd.CurrentPlayer,
+		VSPlayer: *rd.NextPlayer,
+		Rd:       rd,
+		Status:   currentUserStatus,
+	}
+	ttts.Announce <- &Announcement{
+		ToPlayer: *rd.NextPlayer,
+		VSPlayer: *rd.CurrentPlayer,
+		Rd:       rd,
+		Status:   nextUserStatus,
+	}
 }
 
 // End this round
@@ -245,6 +258,7 @@ func (ttts *TTTServer) Daemon() {
 		select {
 		case a := <-ttts.Announce:
 			ttts.ProcessAnnouncement(a)
+		default:
 		}
 
 	}

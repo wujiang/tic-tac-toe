@@ -273,6 +273,9 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	tttc.Status = s.Status
 	if s.GridSnap != nil {
 		tttc.Grid = *s.GridSnap
+	} else {
+		var grid ttt.Grid
+		tttc.Grid = grid
 	}
 	tttc.RedrawAll()
 	return nil
