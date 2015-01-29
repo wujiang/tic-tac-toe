@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
 	"github.com/nsf/termbox-go"
-	"github.com/wujiang/tic-tac-toe/common"
+	"github.com/wujiang/tic-tac-toe"
 )
 
 const (
@@ -244,7 +244,7 @@ func (tttc *TTTClient) SendPin(p ttt.Position) error {
 func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	if s.RoundID != "" && tttc.RoundID != s.RoundID &&
 		!ttt.IsOverStatus(tttc.Status) {
-		glog.Warning("Round IDs do not match")
+		glog.Warningln("Round IDs do not match")
 	} else {
 		tttc.RoundID = s.RoundID
 	}
@@ -277,7 +277,7 @@ func (tttc *TTTClient) Listener() error {
 		status := ttt.PlayerStatus{}
 		err := tttc.Conn.ReadJSON(&status)
 		if err != nil {
-			glog.Warning(tttc.ID, ", ", err)
+			glog.Warningln(tttc.ID, err)
 			status = ttt.PlayerStatus{
 				tttc.RoundID,
 				tttc.Name,
@@ -300,7 +300,7 @@ func (tttc *TTTClient) Listener() error {
 
 func Init(name string) *TTTClient {
 	if err := termbox.Init(); err != nil {
-		glog.Fatal(err)
+		glog.Fatalln(err)
 	}
 
 	termbox.SetInputMode(termbox.InputEsc)

@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"container/list"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
-	"github.com/wujiang/tic-tac-toe/common"
+	"github.com/wujiang/tic-tac-toe"
 )
 
 const (
@@ -202,19 +202,19 @@ func (ttts *TTTServer) ProcessJoin(p *Player, isNew bool) {
 		Rd:       Round{},
 		Status:   ttt.STATUS_WAIT,
 	}
-	glog.Info("waiting list size ", ttts.BenchPlayers.Len())
+	glog.Infoln("waiting list size", ttts.BenchPlayers.Len())
 	if ttts.BenchPlayers.Len() >= 2 {
 		p1 := ttts.BenchPlayers.Pop()
 		p2 := ttts.BenchPlayers.Pop()
 		ttts.createNewRound(p1, p2)
-		glog.Info("new round between ", p1.repr(), " and ",
+		glog.Infoln("new round between", p1.repr(), "and",
 			p2.repr())
 	}
 	if isNew {
 		ttts.Players.Push(p)
-		glog.Info("new player ", p.repr(), " joins")
+		glog.Infoln("new player", p.repr(), "joins")
 	}
-	glog.Info("total players ", ttts.Players.Len())
+	glog.Infoln("total players", ttts.Players.Len())
 }
 
 func (ttts *TTTServer) ProcessQuit(p *Player) {
@@ -235,20 +235,20 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 	} else {
 		ttts.BenchPlayers.Remove(p)
 	}
-	glog.Info("close connection for player ", p.repr())
+	glog.Infoln("close connection for player", p.repr())
 	p.WS.Close()
 }
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 	ps := a.toPlayerStatus()
-	glog.Info("announce to ", a.ToPlayer.repr(), " ", ps.Repr())
+	glog.Infoln("announce to", a.ToPlayer.repr(), ps.Repr())
 	a.ToPlayer.WS.WriteJSON(ps)
 }
 
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd := (*ttts.Groups)[m.RoundID]
 	if rd.ID == "" || rd.CurrentPlayer.ID != m.PlayerID {
-		glog.Info("Invalid move for player ", rd.CurrentPlayer.repr())
+		glog.Infoln("Invalid move for player", rd.CurrentPlayer.repr())
 		return
 	}
 	currentUserStatus := ""
