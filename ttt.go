@@ -7,45 +7,43 @@ import (
 )
 
 const (
-	WIDTH  int = 30
-	HEIGHT int = 12
-	SIZE   int = 3
-	XSPAN  int = WIDTH / SIZE
-	YSPAN  int = HEIGHT / SIZE
+	Width  int = 30
+	Height int = 12
+	Size   int = 3
+	XSpan  int = Width / Size
+	YSpan  int = Height / Size
 
-	COLDEF = termbox.ColorDefault
+	ColDef = termbox.ColorDefault
 
-	UP    string = "up"
-	DOWN  string = "down"
-	LEFT  string = "left"
-	RIGHT string = "right"
+	Up    string = "up"
+	Down  string = "down"
+	Left  string = "left"
+	Right string = "right"
 
-	SPECIALRUNE rune = ' '
-	MYRUNE      rune = 'X'
-	OTHERRUNE   rune = 'O'
+	SpecialRune rune = ' '
+	MyRune      rune = 'X'
+	OtherRune   rune = 'O'
 
-	CMD_QUIT       string = "Quit"
-	CMD_JOIN       string = "Join"
-	CMD_JOIN_AI    string = "Join AI"
-	CMD_MOVE       string = "Move"
-	CMD_NEW_ROUND  string = "New round"
-	CMD_REMATCH    string = "Rematch"
-	CMD_REMATCH_AI string = "Rematch AI"
+	CmdQuit     string = "Quit"
+	CmdJoin     string = "Join"
+	CmdJoinAI   string = "Join AI"
+	CmdMove     string = "Move"
+	CmdNewRound string = "New round"
 
-	STATUS_INIT            string = ""
-	STATUS_CONNECTED       string = "Connected to server"
-	STATUS_WIN             string = "You win"
-	STATUS_LOSS            string = "You loss"
-	STATUS_TIE             string = "Tie"
-	STATUS_QUIT            string = "You quit"
-	STATUS_WAIT            string = "Waiting for another player"
-	STATUS_OTHER_LEFT      string = "The other player left"
-	STATUS_MATCHED         string = "Matched"
-	STATUS_YOUR_TURN       string = "Your turn"
-	STATUS_WAIT_TURN       string = "Other user's turn"
-	STATUS_LOSS_CONNECTION string = "Loss connection from server"
+	StatusInit           string = ""
+	StatusConnected      string = "Connected to server"
+	StatusWin            string = "You win"
+	StatusLoss           string = "You loss"
+	StatusTie            string = "Tie"
+	StatusQuit           string = "You quit"
+	StatusWait           string = "Waiting for another player"
+	StatusOtherLeft      string = "The other player left"
+	StatusMatched        string = "Matched"
+	StatusYourTurn       string = "Your turn"
+	StatusWaitTurn       string = "Other user's turn"
+	StatusLossConnection string = "Loss connection from server"
 
-	HELPMSG = `
+	HelpMsg = `
 - LEFT: h, ctrl-b, arrow-left
 - DOWN: j, ctrl-n, arrow-down
 - UP: k, ctrl-p, arrow-up
@@ -57,18 +55,18 @@ const (
 `
 )
 
-var OVER_STATUSES = []string{
-	STATUS_INIT,
-	STATUS_CONNECTED,
-	STATUS_WIN,
-	STATUS_LOSS,
-	STATUS_TIE,
-	STATUS_OTHER_LEFT,
-	STATUS_WAIT,
+var OverStatuses = []string{
+	StatusInit,
+	StatusConnected,
+	StatusWin,
+	StatusLoss,
+	StatusTie,
+	StatusOtherLeft,
+	StatusWait,
 }
 
 func IsOverStatus(s string) bool {
-	for _, st := range OVER_STATUSES {
+	for _, st := range OverStatuses {
 		if s == st {
 			return true
 		}
@@ -81,7 +79,7 @@ type Position struct {
 	Y int `json:"y"`
 }
 
-type Grid [SIZE][SIZE]string
+type Grid [Size][Size]string
 
 func (g *Grid) Get(p Position) string {
 	return g[p.X][p.Y]
@@ -98,7 +96,7 @@ func (g *Grid) Set(p Position, s string) {
 
 func (g *Grid) hRowNeighbors(p Position) []Position {
 	n := []Position{}
-	for i := 0; i < SIZE; i++ {
+	for i := 0; i < Size; i++ {
 		if i != p.X {
 			n = append(n, Position{i, p.Y})
 		}
@@ -108,7 +106,7 @@ func (g *Grid) hRowNeighbors(p Position) []Position {
 
 func (g *Grid) vRowNeighbors(p Position) []Position {
 	n := []Position{}
-	for i := 0; i < SIZE; i++ {
+	for i := 0; i < Size; i++ {
 		if i != p.Y {
 			n = append(n, Position{p.X, i})
 		}
@@ -119,7 +117,7 @@ func (g *Grid) vRowNeighbors(p Position) []Position {
 func (g *Grid) ldRowNeighbors(p Position) []Position {
 	n := []Position{}
 	isDiagCell := false
-	for i := 0; i < SIZE; i++ {
+	for i := 0; i < Size; i++ {
 		lp := Position{i, i}
 		if lp == p {
 			isDiagCell = true
@@ -137,8 +135,8 @@ func (g *Grid) ldRowNeighbors(p Position) []Position {
 func (g *Grid) rdRowNeighbors(p Position) []Position {
 	n := []Position{}
 	isDiagCell := false
-	for i := 0; i < SIZE; i++ {
-		rp := Position{i, SIZE - 1 - i}
+	for i := 0; i < Size; i++ {
+		rp := Position{i, Size - 1 - i}
 		if rp == p {
 			isDiagCell = true
 		} else {

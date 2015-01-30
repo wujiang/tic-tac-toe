@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	NAME_LENGTH_LIMIT = 8
+	nameLengthLimit = 8
 )
 
 func fill(x, y, w, h int, r rune) {
 	for ly := 0; ly < h; ly++ {
 		for lx := 0; lx < w; lx++ {
-			termbox.SetCell(x+lx, y+ly, r, ttt.COLDEF, ttt.COLDEF)
+			termbox.SetCell(x+lx, y+ly, r, ttt.ColDef, ttt.ColDef)
 		}
 	}
 }
@@ -33,7 +33,7 @@ func printLines(x, y int, msg string, fg termbox.Attribute) {
 			ystart++
 			continue
 		}
-		termbox.SetCell(xstart, ystart, c, fg, ttt.COLDEF)
+		termbox.SetCell(xstart, ystart, c, fg, ttt.ColDef)
 		xstart++
 	}
 
@@ -45,13 +45,13 @@ func getTBCenter() ttt.Position {
 }
 
 func getCenter() ttt.Position {
-	x := (ttt.SIZE - 1) / 2
-	y := (ttt.SIZE - 1) / 2
+	x := (ttt.Size - 1) / 2
+	y := (ttt.Size - 1) / 2
 	return ttt.Position{x, y}
 }
 
 func isValidatePosition(p ttt.Position) bool {
-	return p.X >= 0 && p.X < ttt.SIZE && p.Y >= 0 && p.Y < ttt.SIZE
+	return p.X >= 0 && p.X < ttt.Size && p.Y >= 0 && p.Y < ttt.Size
 }
 
 // Convert grid positions to termbox coordinates
@@ -61,15 +61,15 @@ func toTBPosition(p ttt.Position) (ttt.Position, error) {
 		return p, errors.New("Invalid position")
 	}
 	center := getCenter()
-	x := tbCenter.X - (center.X-p.X)*ttt.WIDTH/ttt.SIZE
-	y := tbCenter.Y - (center.Y-p.Y)*ttt.HEIGHT/ttt.SIZE
+	x := tbCenter.X - (center.X-p.X)*ttt.Width/ttt.Size
+	y := tbCenter.Y - (center.Y-p.Y)*ttt.Height/ttt.Size
 	return ttt.Position{x, y}, nil
 }
 
 func setCell(p ttt.Position, r rune) {
 	tbPos, err := toTBPosition(p)
 	if err == nil {
-		termbox.SetCell(tbPos.X, tbPos.Y, r, ttt.COLDEF, ttt.COLDEF)
+		termbox.SetCell(tbPos.X, tbPos.Y, r, ttt.ColDef, ttt.ColDef)
 	}
 
 }
@@ -90,11 +90,11 @@ type TTTClient struct {
 
 func (tttc *TTTClient) nameToRune(s string) rune {
 	if s != "" && s == tttc.ID {
-		return ttt.MYRUNE
+		return ttt.MyRune
 	} else if s != "" && s == tttc.VSID {
-		return ttt.OTHERRUNE
+		return ttt.OtherRune
 	} else {
-		return ttt.SPECIALRUNE
+		return ttt.SpecialRune
 	}
 }
 
@@ -107,13 +107,13 @@ func (tttc *TTTClient) MoveCursor(direction string) error {
 	x := tttc.CursorPos.X
 	y := tttc.CursorPos.Y
 	switch direction {
-	case ttt.UP:
+	case ttt.Up:
 		y--
-	case ttt.DOWN:
+	case ttt.Down:
 		y++
-	case ttt.LEFT:
+	case ttt.Left:
 		x--
-	case ttt.RIGHT:
+	case ttt.Right:
 		x++
 	}
 
@@ -136,7 +136,7 @@ func (tttc *TTTClient) SetCursor(p ttt.Position) error {
 }
 
 func (tttc *TTTClient) isYourTurn() bool {
-	return tttc.ID != "" && tttc.Status == ttt.STATUS_YOUR_TURN
+	return tttc.ID != "" && tttc.Status == ttt.StatusYourTurn
 }
 
 func (tttc *TTTClient) PinCursor(r rune) bool {
@@ -174,34 +174,34 @@ func (tttc *TTTClient) userScores() string {
 }
 
 func (tttc *TTTClient) RedrawAll() {
-	termbox.Clear(ttt.COLDEF, ttt.COLDEF)
+	termbox.Clear(ttt.ColDef, ttt.ColDef)
 	tbCenter := getTBCenter()
 
-	tbLeftXPos := tbCenter.X - ttt.WIDTH/2
-	tbUpYPos := tbCenter.Y - ttt.HEIGHT/2
+	tbLeftXPos := tbCenter.X - ttt.Width/2
+	tbUpYPos := tbCenter.Y - ttt.Height/2
 
-	for yoffset := 0; yoffset <= ttt.SIZE; yoffset++ {
-		for xoffset := 0; xoffset <= ttt.SIZE; xoffset++ {
-			xstart := tbLeftXPos + xoffset*ttt.XSPAN
-			ystart := tbUpYPos + yoffset*ttt.YSPAN
+	for yoffset := 0; yoffset <= ttt.Size; yoffset++ {
+		for xoffset := 0; xoffset <= ttt.Size; xoffset++ {
+			xstart := tbLeftXPos + xoffset*ttt.XSpan
+			ystart := tbUpYPos + yoffset*ttt.YSpan
 			// all intersections
-			termbox.SetCell(xstart, ystart, '+', ttt.COLDEF,
-				ttt.COLDEF)
-			if xoffset < ttt.SIZE {
-				fill(xstart+1, ystart, ttt.XSPAN-1, 1, '-')
+			termbox.SetCell(xstart, ystart, '+', ttt.ColDef,
+				ttt.ColDef)
+			if xoffset < ttt.Size {
+				fill(xstart+1, ystart, ttt.XSpan-1, 1, '-')
 			}
-			if yoffset < ttt.SIZE {
-				fill(xstart, ystart+1, 1, ttt.YSPAN-1, '|')
+			if yoffset < ttt.Size {
+				fill(xstart, ystart+1, 1, ttt.YSpan-1, '|')
 			}
 
 		}
 	}
 
-	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+2, tttc.userScores(),
-		ttt.COLDEF)
-	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+4, tttc.Status,
+	printLines(tbLeftXPos, tbUpYPos+ttt.Height+2, tttc.userScores(),
+		ttt.ColDef)
+	printLines(tbLeftXPos, tbUpYPos+ttt.Height+4, tttc.Status,
 		termbox.ColorBlue)
-	printLines(tbLeftXPos, tbUpYPos+ttt.HEIGHT+6, ttt.HELPMSG, ttt.COLDEF)
+	printLines(tbLeftXPos, tbUpYPos+ttt.Height+6, ttt.HelpMsg, ttt.ColDef)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -236,7 +236,7 @@ func (tttc *TTTClient) SendPin(p ttt.Position) error {
 		tttc.ID,
 		tttc.Name,
 		p,
-		ttt.CMD_MOVE,
+		ttt.CmdMove,
 	}
 	return tttc.Conn.WriteJSON(m)
 }
@@ -270,13 +270,13 @@ func (tttc *TTTClient) Join(withAI bool) error {
 		return errors.New("This round is not over yet.")
 	}
 	if withAI {
-		return tttc.SendSimpleCMD(ttt.CMD_JOIN_AI)
+		return tttc.SendSimpleCMD(ttt.CmdJoinAI)
 	}
-	return tttc.SendSimpleCMD(ttt.CMD_JOIN)
+	return tttc.SendSimpleCMD(ttt.CmdJoin)
 }
 
 func (tttc *TTTClient) Quit() error {
-	return tttc.SendSimpleCMD(ttt.CMD_QUIT)
+	return tttc.SendSimpleCMD(ttt.CmdQuit)
 }
 
 func (tttc *TTTClient) Listener() error {
@@ -293,7 +293,7 @@ func (tttc *TTTClient) Listener() error {
 				tttc.VSID,
 				tttc.VSName,
 				tttc.VSScore,
-				ttt.STATUS_LOSS_CONNECTION,
+				ttt.StatusLossConnection,
 				&tttc.Grid,
 			}
 			tttc.Update(status)
@@ -313,8 +313,8 @@ func Init(name string) *TTTClient {
 	termbox.SetInputMode(termbox.InputEsc)
 	center := getCenter()
 	tttc := TTTClient{}
-	if len(name) > NAME_LENGTH_LIMIT {
-		tttc.Name = name[:NAME_LENGTH_LIMIT]
+	if len(name) > nameLengthLimit {
+		tttc.Name = name[:nameLengthLimit]
 	} else {
 		tttc.Name = name
 	}

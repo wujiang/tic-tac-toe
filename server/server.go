@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	READ_BUFFER_SIZE  int = 1024
-	WRITE_BUFFER_SIZE int = 2048
+	ReadBufferSize  int = 1024
+	WriteBufferSize int = 2048
+	BufferedChanLen int = 10
 )
 
 type Player struct {
@@ -36,18 +37,18 @@ func (p *Player) repr() string {
 func (p *Player) parseAction() {
 	for {
 		m := ttt.PlayerAction{}
-		_ = p.WS.ReadJSON(&m)
+		p.WS.ReadJSON(&m)
 		switch m.Cmd {
-		case ttt.CMD_QUIT:
+		case ttt.CmdQuit:
 			ttts.ProcessQuit(p)
 			return
-		case ttt.CMD_JOIN:
+		case ttt.CmdJoin:
 			p.Name = m.PlayerName
 			ttts.ProcessJoin(p, false)
-		case ttt.CMD_JOIN_AI:
+		case ttt.CmdJoinAI:
 			p.Name = m.PlayerName
 			ttts.ProcessJoin(p, true)
-		case ttt.CMD_MOVE:
+		case ttt.CmdMove:
 			ttts.Judge(&m)
 		default:
 		}
@@ -158,7 +159,7 @@ type TTTServer struct {
 	Players      *map[string]*Player
 	Groups       *Group
 	BenchPlayers *PlayersQueue
-	AIPlayers    *PlayersQueue
+	AIPlayers    chan *Player
 
 	Announce chan *Announcement // outgoing channel
 }
@@ -187,21 +188,20 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 		ToPlayer: *r.CurrentPlayer,
 		VSPlayer: *r.NextPlayer,
 		Rd:       r,
-		Status:   ttt.STATUS_YOUR_TURN,
+		Status:   ttt.StatusYourTurn,
 	}
 	ttts.Announce <- &Announcement{
 		ToPlayer: *r.NextPlayer,
 		VSPlayer: *r.CurrentPlayer,
 		Rd:       r,
-		Status:   ttt.STATUS_WAIT_TURN,
+		Status:   ttt.StatusWaitTurn,
 	}
 	return r
 }
 
 func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
 	if withAI {
-		ttts.AIPlayers.Remove(p)
-		ttts.AIPlayers.Push(p)
+		ttts.AIPlayers <- p
 	} else {
 		ttts.BenchPlayers.Remove(p)
 		ttts.BenchPlayers.Push(p)
@@ -210,7 +210,7 @@ func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
 		ToPlayer: *p,
 		VSPlayer: Player{},
 		Rd:       Round{},
-		Status:   ttt.STATUS_WAIT,
+		Status:   ttt.StatusWait,
 	}
 	glog.Infoln("waiting list size", ttts.BenchPlayers.Len())
 	if ttts.BenchPlayers.Len() >= 2 {
@@ -236,7 +236,7 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 				ToPlayer: *vs,
 				VSPlayer: Player{},
 				Rd:       Round{},
-				Status:   ttt.STATUS_OTHER_LEFT,
+				Status:   ttt.StatusOtherLeft,
 			}
 		}
 	} else {
@@ -267,16 +267,16 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 		rd.CurrentPlayer.Score -= 1
 		rd.NextPlayer.Score += 1
 		ttts.EndRound(m.RoundID)
-		currentUserStatus = ttt.STATUS_LOSS
-		nextUserStatus = ttt.STATUS_WIN
+		currentUserStatus = ttt.StatusLoss
+		nextUserStatus = ttt.StatusWin
 	} else if rd.Grid.IsFull() {
 		ttts.EndRound(m.RoundID)
-		currentUserStatus = ttt.STATUS_TIE
-		nextUserStatus = ttt.STATUS_TIE
+		currentUserStatus = ttt.StatusTie
+		nextUserStatus = ttt.StatusTie
 	} else {
 		(*ttts.Groups)[m.RoundID] = rd
-		currentUserStatus = ttt.STATUS_YOUR_TURN
-		nextUserStatus = ttt.STATUS_WAIT_TURN
+		currentUserStatus = ttt.StatusYourTurn
+		nextUserStatus = ttt.StatusWaitTurn
 	}
 	ttts.Announce <- &Announcement{
 		ToPlayer: *rd.CurrentPlayer,
@@ -309,8 +309,8 @@ func (ttts *TTTServer) Daemon() {
 }
 
 var upgrader = &websocket.Upgrader{
-	ReadBufferSize:  READ_BUFFER_SIZE,
-	WriteBufferSize: WRITE_BUFFER_SIZE,
+	ReadBufferSize:  ReadBufferSize,
+	WriteBufferSize: WriteBufferSize,
 }
 
 func Init() *TTTServer {
@@ -324,12 +324,9 @@ func Init() *TTTServer {
 		lock:    sync.Mutex{},
 	}
 
-	ttts.AIPlayers = &PlayersQueue{
-		players: list.New(),
-		lock:    sync.Mutex{},
-	}
+	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
 
-	ttts.Announce = make(chan *Announcement, 10)
+	ttts.Announce = make(chan *Announcement, BufferedChanLen)
 	ttts.Groups = &group
 	go ttts.Daemon()
 	return &ttts
@@ -347,7 +344,7 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 		ToPlayer: *p,
 		VSPlayer: Player{},
 		Rd:       Round{},
-		Status:   ttt.STATUS_CONNECTED,
+		Status:   ttt.StatusConnected,
 	}
 	p.parseAction()
 }

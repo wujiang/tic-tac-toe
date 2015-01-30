@@ -40,18 +40,18 @@ mainloop:
 			// arrows ane emacs key bindings
 			switch ev.Key {
 			case termbox.KeyEnter, termbox.KeySpace:
-				tttc.PinCursor(ttt.MYRUNE)
+				tttc.PinCursor(ttt.MyRune)
 			case termbox.KeyEsc:
 				tttc.Quit()
 				break mainloop
 			case termbox.KeyArrowLeft, termbox.KeyCtrlB:
-				tttc.MoveCursor(ttt.LEFT)
+				tttc.MoveCursor(ttt.Left)
 			case termbox.KeyArrowDown, termbox.KeyCtrlN:
-				tttc.MoveCursor(ttt.DOWN)
+				tttc.MoveCursor(ttt.Down)
 			case termbox.KeyArrowUp, termbox.KeyCtrlP:
-				tttc.MoveCursor(ttt.UP)
+				tttc.MoveCursor(ttt.Up)
 			case termbox.KeyArrowRight, termbox.KeyCtrlF:
-				tttc.MoveCursor(ttt.RIGHT)
+				tttc.MoveCursor(ttt.Right)
 			case termbox.KeyF1:
 				tttc.Join(true)
 			case termbox.KeyF2:
@@ -61,18 +61,18 @@ mainloop:
 			// vim key bindings
 			switch ev.Ch {
 			case 'i':
-				tttc.PinCursor(ttt.MYRUNE)
+				tttc.PinCursor(ttt.MyRune)
 			case 'q':
 				tttc.Quit()
 				break mainloop
 			case 'h':
-				tttc.MoveCursor(ttt.LEFT)
+				tttc.MoveCursor(ttt.Left)
 			case 'j':
-				tttc.MoveCursor(ttt.DOWN)
+				tttc.MoveCursor(ttt.Down)
 			case 'k':
-				tttc.MoveCursor(ttt.UP)
+				tttc.MoveCursor(ttt.Up)
 			case 'l':
-				tttc.MoveCursor(ttt.RIGHT)
+				tttc.MoveCursor(ttt.Right)
 			}
 
 		case termbox.EventError:
