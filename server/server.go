@@ -21,6 +21,12 @@ const (
 	BufferedChanLen int = 10
 )
 
+var ttts = InitTTTServer()
+
+// Internal communication channel with AI bots
+var playerActions = make(chan ttt.PlayerAction, BufferedChanLen)
+var playerStatuses = make(chan ttt.PlayerStatus, BufferedChanLen)
+
 type Player struct {
 	WS      *websocket.Conn
 	RoundID string
@@ -196,32 +202,37 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 		Rd:       r,
 		Status:   ttt.StatusWaitTurn,
 	}
+	glog.Infoln("new round between", p1.repr(), "and", p2.repr())
 	return r
 }
 
 func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
-	if withAI {
-		ttts.AIPlayers <- p
-	} else {
-		ttts.BenchPlayers.Remove(p)
-		ttts.BenchPlayers.Push(p)
-	}
 	ttts.Announce <- &Announcement{
 		ToPlayer: *p,
 		VSPlayer: Player{},
 		Rd:       Round{},
 		Status:   ttt.StatusWait,
 	}
-	glog.Infoln("waiting list size", ttts.BenchPlayers.Len())
-	if ttts.BenchPlayers.Len() >= 2 {
-		p1 := ttts.BenchPlayers.Pop()
-		p2 := ttts.BenchPlayers.Pop()
-		ttts.createNewRound(p1, p2)
-		glog.Infoln("new round between", p1.repr(), "and",
-			p2.repr())
-	}
 	(*ttts.Players)[p.ID] = p
 	glog.Infoln("total players", len((*ttts.Players)))
+	if withAI {
+		aip := &Player{
+			ID:   uuid.New(),
+			Name: "AI",
+		}
+		ttts.createNewRound(p, aip)
+		glog.Infoln("deploying AI player")
+		am.NewAIPlayer(aip.ID)
+	} else {
+		ttts.BenchPlayers.Remove(p)
+		ttts.BenchPlayers.Push(p)
+		glog.Infoln("waiting list size", ttts.BenchPlayers.Len())
+		if ttts.BenchPlayers.Len() > 1 {
+			p1 := ttts.BenchPlayers.Pop()
+			p2 := ttts.BenchPlayers.Pop()
+			ttts.createNewRound(p1, p2)
+		}
+	}
 }
 
 func (ttts *TTTServer) ProcessQuit(p *Player) {
@@ -249,7 +260,12 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {
 	ps := a.toPlayerStatus()
 	glog.Infoln("announce to", a.ToPlayer.repr(), ps.Repr())
-	a.ToPlayer.WS.WriteJSON(ps)
+	if a.ToPlayer.WS != nil {
+		a.ToPlayer.WS.WriteJSON(ps)
+	} else {
+		playerStatuses <- *ps
+	}
+
 }
 
 func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
@@ -302,6 +318,10 @@ func (ttts *TTTServer) Daemon() {
 		select {
 		case a := <-ttts.Announce:
 			ttts.ProcessAnnouncement(a)
+		case p := <-ttts.AIPlayers:
+			ttts.ProcessJoin(p, false)
+		case a := <-playerActions:
+			ttts.Judge(&a)
 		default:
 		}
 
@@ -313,7 +333,7 @@ var upgrader = &websocket.Upgrader{
 	WriteBufferSize: WriteBufferSize,
 }
 
-func Init() *TTTServer {
+func InitTTTServer() *TTTServer {
 	ttts := TTTServer{}
 	group := make(Group)
 	players := make(map[string]*Player)
@@ -331,8 +351,6 @@ func Init() *TTTServer {
 	go ttts.Daemon()
 	return &ttts
 }
-
-var ttts = Init()
 
 func WSHandler(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)

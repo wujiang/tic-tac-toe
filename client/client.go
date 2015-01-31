@@ -221,22 +221,22 @@ func (tttc *TTTClient) Connect(s string) error {
 
 func (tttc *TTTClient) SendSimpleCMD(cmd string) error {
 	m := ttt.PlayerAction{
-		tttc.RoundID,
-		tttc.ID,
-		tttc.Name,
-		ttt.Position{},
-		cmd,
+		RoundID:    tttc.RoundID,
+		PlayerID:   tttc.ID,
+		PlayerName: tttc.Name,
+		Pos:        ttt.Position{},
+		Cmd:        cmd,
 	}
 	return tttc.Conn.WriteJSON(m)
 }
 
 func (tttc *TTTClient) SendPin(p ttt.Position) error {
 	m := ttt.PlayerAction{
-		tttc.RoundID,
-		tttc.ID,
-		tttc.Name,
-		p,
-		ttt.CmdMove,
+		RoundID:    tttc.RoundID,
+		PlayerID:   tttc.ID,
+		PlayerName: tttc.Name,
+		Pos:        p,
+		Cmd:        ttt.CmdMove,
 	}
 	return tttc.Conn.WriteJSON(m)
 }
@@ -245,6 +245,7 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	if s.RoundID != "" && tttc.RoundID != s.RoundID &&
 		!ttt.IsOverStatus(tttc.Status) {
 		glog.Warningln("Round IDs do not match")
+		return errors.New("Round IDs do not match")
 	} else {
 		tttc.RoundID = s.RoundID
 	}

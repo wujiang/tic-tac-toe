@@ -65,13 +65,28 @@ var OverStatuses = []string{
 	StatusWait,
 }
 
-func IsOverStatus(s string) bool {
-	for _, st := range OverStatuses {
-		if s == st {
+var AIOverStatuses = []string{
+	StatusWin,
+	StatusLoss,
+	StatusTie,
+	StatusOtherLeft,
+}
+
+func itemInSlice(i string, s []string) bool {
+	for _, item := range s {
+		if item == i {
 			return true
 		}
 	}
 	return false
+}
+
+func IsOverStatus(s string) bool {
+	return itemInSlice(s, OverStatuses)
+}
+
+func IsAIOverStatus(s string) bool {
+	return itemInSlice(s, AIOverStatuses)
 }
 
 type Position struct {
