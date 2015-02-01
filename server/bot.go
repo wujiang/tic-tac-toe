@@ -87,15 +87,25 @@ func (ai *AIPlayer) Move() {
 	if ai.Status != ttt.StatusYourTurn {
 		return
 	}
-	// TODO: real AI to figure out position
+
 	m := ttt.PlayerAction{
 		RoundID:    ai.RoundID,
 		PlayerID:   ai.ID,
 		PlayerName: ai.Name,
-		Pos:        ttt.Position{X: 1, Y: 1},
+		Pos:        ai.GetBestPosition(),
 		Cmd:        ttt.CmdMove,
 	}
 	playerActions <- m
+}
+
+func (ai *AIPlayer) GetBestPosition() ttt.Position {
+	g := ttt.Game{
+		CurrentPlayer: ai.ID,
+		NextPlayer:    ai.VSID,
+		Grd:           ai.Grid,
+	}
+	r := g.GetBestMove(ai.ID)
+	return r.Pos
 }
 
 func (ai *AIPlayer) Play() {

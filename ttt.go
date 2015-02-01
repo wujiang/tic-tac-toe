@@ -204,6 +204,102 @@ func (g *Grid) IsFull() bool {
 	return true
 }
 
+func (g *Grid) GetAvailableCells() []Position {
+	var pos []Position
+	for x, l := range g {
+		for y, s := range l {
+			if s == "" {
+				pos = append(pos, Position{x, y})
+			}
+		}
+	}
+	return pos
+}
+
+type Round struct {
+	Score int
+	Pos   Position
+}
+
+type Rounds []Round
+
+func (rs Rounds) Min() Round {
+	if len(rs) == 0 {
+		return Round{}
+	}
+	min := rs[0]
+	for _, r := range rs {
+		if r.Score < min.Score {
+			min = r
+		}
+	}
+	return min
+}
+
+func (rs Rounds) Max() Round {
+	if len(rs) == 0 {
+		return Round{}
+	}
+	max := rs[0]
+	for _, r := range rs {
+		if r.Score > max.Score {
+			max = r
+		}
+	}
+	return max
+}
+
+type Game struct {
+	CurrentPlayer string
+	NextPlayer    string
+	Grd           Grid
+}
+
+// Return score and whether or not the game is over
+func (g Game) Judge(player string, pos Position) (int, bool) {
+	if g.Grd.HasSameMarksInRows(pos, player) {
+		return 1, true
+	} else if g.Grd.IsFull() {
+		return 0, true
+	} else {
+		return 0, false
+	}
+}
+
+func (g *Game) SwitchTurn() {
+	p := g.CurrentPlayer
+	g.CurrentPlayer = g.NextPlayer
+	g.NextPlayer = p
+}
+
+func (g Game) GetBestMove(player string) Round {
+	var rs Rounds
+
+	pos := g.Grd.GetAvailableCells()
+	for _, p := range pos {
+		ng := g
+		score, over := ng.Judge(ng.CurrentPlayer, p)
+		if over {
+			if ng.CurrentPlayer != player {
+				score = -score
+			}
+			rs = append(rs, Round{score, p})
+		} else {
+			ng.Grd.Set(p, ng.CurrentPlayer)
+			(&ng).SwitchTurn()
+			rd := ng.GetBestMove(player)
+			rs = append(rs, Round{rd.Score, p})
+		}
+
+	}
+
+	if g.CurrentPlayer == player {
+		return rs.Max()
+	} else {
+		return rs.Min()
+	}
+}
+
 type PlayerAction struct {
 	RoundID    string   `json:"round_id,omitempty"`
 	PlayerID   string   `json:"player_id,omitempty"`
