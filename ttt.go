@@ -2,6 +2,8 @@ package ttt
 
 import (
 	"encoding/json"
+	"math/rand"
+	"time"
 
 	"github.com/nsf/termbox-go"
 )
@@ -70,6 +72,11 @@ var AIOverStatuses = []string{
 	StatusLoss,
 	StatusTie,
 	StatusOtherLeft,
+}
+
+func RandInt(n int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(n)
 }
 
 func itemInSlice(i string, s []string) bool {
@@ -204,6 +211,27 @@ func (g *Grid) IsFull() bool {
 	return true
 }
 
+func (g *Grid) IsEmpty() bool {
+	for _, l := range g {
+		for _, s := range l {
+			if s != "" {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (g *Grid) GetRandomCorner() Position {
+	corners := []Position{
+		Position{0, 0},
+		Position{Size - 1, 0},
+		Position{0, Size - 1},
+		Position{Size - 1, Size - 1},
+	}
+	return corners[RandInt(4)]
+}
+
 func (g *Grid) GetAvailableCells() []Position {
 	var pos []Position
 	for x, l := range g {
@@ -273,6 +301,12 @@ func (g *Game) SwitchTurn() {
 }
 
 func (g Game) GetBestMove(player string) Round {
+	if g.Grd.IsEmpty() {
+		return Round{
+			Score: 0,
+			Pos:   g.Grd.GetRandomCorner(),
+		}
+	}
 	var rs Rounds
 
 	pos := g.Grd.GetAvailableCells()

@@ -104,7 +104,16 @@ func TestGameGetBestMove2(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{0, Position{0, 0}})
+	corners := []Position{
+		Position{0, 0},
+		Position{Size - 1, 0},
+		Position{0, Size - 1},
+		Position{Size - 1, Size - 1},
+	}
+
+	assert.Equal(t, r.Score, 0)
+	assert.True(t, corners[0] == r.Pos || corners[1] == r.Pos ||
+		corners[2] == r.Pos || corners[3] == r.Pos)
 }
 
 func TestGameGetBestMove3(t *testing.T) {

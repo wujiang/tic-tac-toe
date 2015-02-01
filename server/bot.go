@@ -88,11 +88,13 @@ func (ai *AIPlayer) Move() {
 		return
 	}
 
+	pos := ai.GetBestPosition()
+
 	m := ttt.PlayerAction{
 		RoundID:    ai.RoundID,
 		PlayerID:   ai.ID,
 		PlayerName: ai.Name,
-		Pos:        ai.GetBestPosition(),
+		Pos:        pos,
 		Cmd:        ttt.CmdMove,
 	}
 	playerActions <- m

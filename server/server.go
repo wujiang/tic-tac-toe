@@ -2,11 +2,9 @@ package main
 
 import (
 	"container/list"
-	"math/rand"
 	"net/http"
 	"strings"
 	"sync"
-	"time"
 
 	"code.google.com/p/go-uuid/uuid"
 
@@ -173,10 +171,10 @@ type TTTServer struct {
 // Create a new round between 2 players.
 func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 	var grid ttt.Grid
-	rand.Seed(time.Now().Unix())
+
 	currentPlayer := p1
 	nextPlayer := p2
-	if rand.Intn(2) == 0 {
+	if ttt.RandInt(2) == 0 {
 		currentPlayer = p2
 		nextPlayer = p1
 	}
