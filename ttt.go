@@ -74,6 +74,13 @@ var AIOverStatuses = []string{
 	StatusOtherLeft,
 }
 
+var Corners = []Position{
+	Position{0, 0},
+	Position{Size - 1, 0},
+	Position{0, Size - 1},
+	Position{Size - 1, Size - 1},
+}
+
 func RandInt(n int) int {
 	rand.Seed(time.Now().Unix())
 	return rand.Intn(n)
@@ -223,13 +230,7 @@ func (g *Grid) IsEmpty() bool {
 }
 
 func (g *Grid) GetRandomCorner() Position {
-	corners := []Position{
-		Position{0, 0},
-		Position{Size - 1, 0},
-		Position{0, Size - 1},
-		Position{Size - 1, Size - 1},
-	}
-	return corners[RandInt(4)]
+	return Corners[RandInt(4)]
 }
 
 func (g *Grid) GetAvailableCells() []Position {
@@ -244,34 +245,34 @@ func (g *Grid) GetAvailableCells() []Position {
 	return pos
 }
 
-type Round struct {
+type GameResult struct {
 	Score int
 	Pos   Position
 }
 
-type Rounds []Round
+type GameResults []GameResult
 
-func (rs Rounds) Min() Round {
-	if len(rs) == 0 {
-		return Round{}
+func (gs GameResults) Min() GameResult {
+	if len(gs) == 0 {
+		return GameResult{}
 	}
-	min := rs[0]
-	for _, r := range rs {
-		if r.Score < min.Score {
-			min = r
+	min := gs[0]
+	for _, g := range gs {
+		if g.Score < min.Score {
+			min = g
 		}
 	}
 	return min
 }
 
-func (rs Rounds) Max() Round {
-	if len(rs) == 0 {
-		return Round{}
+func (gs GameResults) Max() GameResult {
+	if len(gs) == 0 {
+		return GameResult{}
 	}
-	max := rs[0]
-	for _, r := range rs {
-		if r.Score > max.Score {
-			max = r
+	max := gs[0]
+	for _, g := range gs {
+		if g.Score > max.Score {
+			max = g
 		}
 	}
 	return max
@@ -300,14 +301,14 @@ func (g *Game) SwitchTurn() {
 	g.NextPlayer = p
 }
 
-func (g Game) GetBestMove(player string) Round {
+func (g Game) GetBestMove(player string) GameResult {
 	if g.Grd.IsEmpty() {
-		return Round{
+		return GameResult{
 			Score: 0,
 			Pos:   g.Grd.GetRandomCorner(),
 		}
 	}
-	var rs Rounds
+	var gs GameResults
 
 	pos := g.Grd.GetAvailableCells()
 	for _, p := range pos {
@@ -317,20 +318,20 @@ func (g Game) GetBestMove(player string) Round {
 			if ng.CurrentPlayer != player {
 				score = -score
 			}
-			rs = append(rs, Round{score, p})
+			gs = append(gs, GameResult{score, p})
 		} else {
 			ng.Grd.Set(p, ng.CurrentPlayer)
 			(&ng).SwitchTurn()
 			rd := ng.GetBestMove(player)
-			rs = append(rs, Round{rd.Score, p})
+			gs = append(gs, GameResult{rd.Score, p})
 		}
 
 	}
 
 	if g.CurrentPlayer == player {
-		return rs.Max()
+		return gs.Max()
 	} else {
-		return rs.Min()
+		return gs.Min()
 	}
 }
 

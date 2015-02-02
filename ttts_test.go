@@ -6,30 +6,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRoundsMin(t *testing.T) {
-	rs := Rounds{}
-	assert.Equal(t, rs.Min(), Round{})
-
-	rs = Rounds{
-		Round{1, Position{1, 2}},
-		Round{9, Position{2, 2}},
-		Round{-8, Position{0, 2}},
-		Round{10, Position{0, 1}},
-	}
-	assert.Equal(t, rs.Min(), rs[2])
+func TestRandInt(t *testing.T) {
+	n := RandInt(100)
+	assert.True(t, n < 100 && n >= 0)
 }
 
-func TestRoundsMax(t *testing.T) {
-	rs := Rounds{}
-	assert.Equal(t, rs.Max(), Round{})
+func TestitemInSlice(t *testing.T) {
+	assert.True(t, itemInSlice("hello", []string{"hello", "world"}))
+	assert.False(t, itemInSlice("foo", []string{"hello", "world"}))
+}
 
-	rs = Rounds{
-		Round{1, Position{1, 2}},
-		Round{9, Position{2, 2}},
-		Round{-8, Position{0, 2}},
-		Round{10, Position{0, 1}},
+func TestGameResultsMin(t *testing.T) {
+	gs := GameResults{}
+	assert.Equal(t, gs.Min(), GameResult{})
+
+	gs = GameResults{
+		GameResult{1, Position{1, 2}},
+		GameResult{9, Position{2, 2}},
+		GameResult{-8, Position{0, 2}},
+		GameResult{10, Position{0, 1}},
 	}
-	assert.Equal(t, rs.Max(), rs[3])
+	assert.Equal(t, gs.Min(), gs[2])
+}
+
+func TestGameResultsMax(t *testing.T) {
+	gs := GameResults{}
+	assert.Equal(t, gs.Max(), GameResult{})
+
+	gs = GameResults{
+		GameResult{1, Position{1, 2}},
+		GameResult{9, Position{2, 2}},
+		GameResult{-8, Position{0, 2}},
+		GameResult{10, Position{0, 1}},
+	}
+	assert.Equal(t, gs.Max(), gs[3])
 }
 
 func TestGameSwitchTurn(t *testing.T) {
@@ -93,7 +103,7 @@ func TestGameGetBestMove(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{1, Position{1, 1}})
+	assert.Equal(t, r, GameResult{1, Position{1, 1}})
 }
 
 func TestGameGetBestMove2(t *testing.T) {
@@ -104,16 +114,9 @@ func TestGameGetBestMove2(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	corners := []Position{
-		Position{0, 0},
-		Position{Size - 1, 0},
-		Position{0, Size - 1},
-		Position{Size - 1, Size - 1},
-	}
-
 	assert.Equal(t, r.Score, 0)
-	assert.True(t, corners[0] == r.Pos || corners[1] == r.Pos ||
-		corners[2] == r.Pos || corners[3] == r.Pos)
+	assert.True(t, Corners[0] == r.Pos || Corners[1] == r.Pos ||
+		Corners[2] == r.Pos || Corners[3] == r.Pos)
 }
 
 func TestGameGetBestMove3(t *testing.T) {
@@ -128,7 +131,7 @@ func TestGameGetBestMove3(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, Round{0, Position{1, 1}})
+	assert.Equal(t, r, GameResult{0, Position{1, 1}})
 }
 
 func TestGameGetBestMove4(t *testing.T) {
@@ -143,7 +146,7 @@ func TestGameGetBestMove4(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{0, Position{0, 1}})
+	assert.Equal(t, r, GameResult{0, Position{0, 1}})
 }
 
 func TestGameGetBestMove5(t *testing.T) {
@@ -158,7 +161,7 @@ func TestGameGetBestMove5(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, Round{0, Position{0, 2}})
+	assert.Equal(t, r, GameResult{0, Position{0, 2}})
 }
 
 func TestGameGetBestMove6(t *testing.T) {
@@ -173,7 +176,7 @@ func TestGameGetBestMove6(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{0, Position{2, 0}})
+	assert.Equal(t, r, GameResult{0, Position{2, 0}})
 }
 
 func TestGameGetBestMove7(t *testing.T) {
@@ -188,7 +191,7 @@ func TestGameGetBestMove7(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, Round{0, Position{1, 0}})
+	assert.Equal(t, r, GameResult{0, Position{1, 0}})
 }
 
 func TestGameGetBestMove8(t *testing.T) {
@@ -203,7 +206,7 @@ func TestGameGetBestMove8(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{0, Position{1, 2}})
+	assert.Equal(t, r, GameResult{0, Position{1, 2}})
 }
 
 func TestGameGetBestMove9(t *testing.T) {
@@ -218,7 +221,7 @@ func TestGameGetBestMove9(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, Round{0, Position{2, 1}})
+	assert.Equal(t, r, GameResult{0, Position{2, 1}})
 }
 
 func TestGameGetBestMove10(t *testing.T) {
@@ -233,7 +236,7 @@ func TestGameGetBestMove10(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, Round{0, Position{2, 2}})
+	assert.Equal(t, r, GameResult{0, Position{2, 2}})
 }
 
 func TestGameGetBestMove11(t *testing.T) {
@@ -248,5 +251,5 @@ func TestGameGetBestMove11(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, Round{1, Position{1, 1}})
+	assert.Equal(t, r, GameResult{1, Position{1, 1}})
 }

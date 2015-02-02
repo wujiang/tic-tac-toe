@@ -54,6 +54,7 @@ func (am *AIManager) Dispatch() {
 		select {
 		case s := <-playerStatuses:
 			am.UpdatePlayer(&s)
+		default:
 		}
 	}
 }

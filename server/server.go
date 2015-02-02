@@ -306,7 +306,6 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	}
 }
 
-// End this round
 func (ttts *TTTServer) EndRound(r string) {
 	delete(*ttts.Groups, r)
 }
@@ -336,14 +335,11 @@ func InitTTTServer() *TTTServer {
 	group := make(Group)
 	players := make(map[string]*Player)
 	ttts.Players = &players
-
 	ttts.BenchPlayers = &PlayersQueue{
 		players: list.New(),
 		lock:    sync.Mutex{},
 	}
-
 	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
-
 	ttts.Announce = make(chan *Announcement, BufferedChanLen)
 	ttts.Groups = &group
 	go ttts.Daemon()
