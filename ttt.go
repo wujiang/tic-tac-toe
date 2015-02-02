@@ -118,12 +118,8 @@ func (g *Grid) Set(p Position, s string) {
 	g[p.X][p.Y] = s
 }
 
-// Neighbor cells are defined as:
-// - cells in its horizontal row
-// - cells in its vertical row
-// - cells in its diagonal row (if applicable)
-
-func (g *Grid) hRowNeighbors(p Position) []Position {
+// Cells in its horizontal row
+func (g *Grid) HRowNeighbors(p Position) []Position {
 	n := []Position{}
 	for i := 0; i < Size; i++ {
 		if i != p.X {
@@ -133,7 +129,8 @@ func (g *Grid) hRowNeighbors(p Position) []Position {
 	return n
 }
 
-func (g *Grid) vRowNeighbors(p Position) []Position {
+// Cells in its vertical row
+func (g *Grid) VRowNeighbors(p Position) []Position {
 	n := []Position{}
 	for i := 0; i < Size; i++ {
 		if i != p.Y {
@@ -143,7 +140,8 @@ func (g *Grid) vRowNeighbors(p Position) []Position {
 	return n
 }
 
-func (g *Grid) ldRowNeighbors(p Position) []Position {
+// Cells in its left diagonal row (if applicable)
+func (g *Grid) LDRowNeighbors(p Position) []Position {
 	n := []Position{}
 	isDiagCell := false
 	for i := 0; i < Size; i++ {
@@ -161,7 +159,8 @@ func (g *Grid) ldRowNeighbors(p Position) []Position {
 	}
 }
 
-func (g *Grid) rdRowNeighbors(p Position) []Position {
+// Cells in its right diagonal row (if applicable)
+func (g *Grid) RDRowNeighbors(p Position) []Position {
 	n := []Position{}
 	isDiagCell := false
 	for i := 0; i < Size; i++ {
@@ -179,13 +178,14 @@ func (g *Grid) rdRowNeighbors(p Position) []Position {
 	}
 }
 
+// Check if the give position has same marks in a row
 func (g *Grid) HasSameMarksInRows(p Position, s string) bool {
 	g.Set(p, s)
 	ns := [][]Position{
-		g.hRowNeighbors(p),
-		g.vRowNeighbors(p),
-		g.ldRowNeighbors(p),
-		g.rdRowNeighbors(p),
+		g.HRowNeighbors(p),
+		g.VRowNeighbors(p),
+		g.LDRowNeighbors(p),
+		g.RDRowNeighbors(p),
 	}
 
 	for _, l := range ns {
@@ -301,6 +301,7 @@ func (g *Game) SwitchTurn() {
 	g.NextPlayer = p
 }
 
+// Use minmax to get the best move for a player
 func (g Game) GetBestMove(player string) GameResult {
 	if g.Grd.IsEmpty() {
 		return GameResult{

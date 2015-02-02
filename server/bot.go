@@ -35,6 +35,7 @@ func (am *AIManager) NewAIPlayer(id string) *AIPlayer {
 	}
 	go p.Play()
 	(*am.AIPlayers)[id] = p
+	glog.Infoln("total AI players", len((*am.AIPlayers)))
 	return p
 }
 
@@ -117,6 +118,7 @@ func (ai *AIPlayer) Play() {
 			ai.Update(s)
 			ai.Move()
 		case <-ai.QuitChan:
+			delete((*am.AIPlayers), ai.ID)
 			break
 		}
 	}

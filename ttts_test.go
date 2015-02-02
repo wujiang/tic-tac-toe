@@ -16,6 +16,97 @@ func TestitemInSlice(t *testing.T) {
 	assert.False(t, itemInSlice("foo", []string{"hello", "world"}))
 }
 
+func TestGridGet(t *testing.T) {
+	gd := Grid{}
+	assert.Equal(t, gd.Get(Position{0, 0}), "")
+}
+
+func TestGridSet(t *testing.T) {
+	gd := Grid{}
+	pos := Position{0, 0}
+	gd.Set(pos, "X")
+	assert.Equal(t, gd.Get(pos), "X")
+}
+
+func TestGridHRowNeighbors(t *testing.T) {
+	gd := Grid{}
+	neighbors := gd.HRowNeighbors(Position{1, 1})
+	assert.Equal(t, neighbors, []Position{Position{0, 1}, Position{2, 1}})
+}
+
+func TestGridVRowNeighbors(t *testing.T) {
+	gd := Grid{}
+	neighbors := gd.VRowNeighbors(Position{1, 1})
+	assert.Equal(t, neighbors, []Position{Position{1, 0}, Position{1, 2}})
+}
+
+func TestGridLDRowNeighbors(t *testing.T) {
+	gd := Grid{}
+	neighbors := gd.LDRowNeighbors(Position{1, 1})
+	assert.Equal(t, neighbors, []Position{Position{0, 0}, Position{2, 2}})
+	neighbors = gd.LDRowNeighbors(Position{0, 1})
+	assert.Equal(t, neighbors, []Position{})
+}
+
+func TestGridRDRowNeighbors(t *testing.T) {
+	gd := Grid{}
+	neighbors := gd.RDRowNeighbors(Position{1, 1})
+	assert.Equal(t, neighbors, []Position{Position{0, 2}, Position{2, 0}})
+	neighbors = gd.RDRowNeighbors(Position{0, 1})
+	assert.Equal(t, neighbors, []Position{})
+}
+
+func TestGridHasSameMarksInRows(t *testing.T) {
+	gd := Grid{}
+	assert.True(t, gd.HasSameMarksInRows(Position{1, 1}, ""))
+	assert.False(t, gd.HasSameMarksInRows(Position{1, 1}, "X"))
+	gd = Grid{
+		{"X", "O", "X"},
+		{"", "", "O"},
+		{"O", "", "X"},
+	}
+	assert.True(t, gd.HasSameMarksInRows(Position{1, 1}, "X"))
+	assert.False(t, gd.HasSameMarksInRows(Position{1, 0}, "X"))
+}
+
+func TestGridIsFull(t *testing.T) {
+	gd := Grid{}
+	assert.False(t, gd.IsFull())
+	gd = Grid{
+		{"X", "O", "X"},
+		{"", "", "O"},
+		{"O", "", "X"},
+	}
+	assert.False(t, gd.IsFull())
+	gd = Grid{
+		{"X", "O", "X"},
+		{"X", "O", "O"},
+		{"O", "X", "X"},
+	}
+	assert.True(t, gd.IsFull())
+}
+
+func TestGridIsEmpty(t *testing.T) {
+	gd := Grid{}
+	assert.True(t, gd.IsEmpty())
+	gd = Grid{
+		{"X", "O", "X"},
+		{"", "", "O"},
+		{"O", "", "X"},
+	}
+	assert.False(t, gd.IsEmpty())
+}
+
+func TestGridGetAvailableCells(t *testing.T) {
+	gd := Grid{
+		{"X", "", "O"},
+		{"", "O", "X"},
+		{"X", "", "O"},
+	}
+	available := []Position{Position{0, 1}, Position{1, 0}, Position{2, 1}}
+	assert.Equal(t, gd.GetAvailableCells(), available)
+}
+
 func TestGameResultsMin(t *testing.T) {
 	gs := GameResults{}
 	assert.Equal(t, gs.Min(), GameResult{})
