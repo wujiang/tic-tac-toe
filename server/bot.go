@@ -54,7 +54,6 @@ func (am *AIManager) Dispatch() {
 		select {
 		case s := <-playerStatuses:
 			am.UpdatePlayer(&s)
-		default:
 		}
 	}
 }
@@ -119,7 +118,6 @@ func (ai *AIPlayer) Play() {
 			ai.Move()
 		case <-ai.QuitChan:
 			break
-		default:
 		}
 	}
 }

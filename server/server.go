@@ -54,7 +54,6 @@ func (p *Player) parseAction() {
 			ttts.ProcessJoin(p, true)
 		case ttt.CmdMove:
 			ttts.Judge(&m)
-		default:
 		}
 	}
 }
@@ -319,9 +318,7 @@ func (ttts *TTTServer) Daemon() {
 			ttts.ProcessJoin(p, false)
 		case a := <-playerActions:
 			ttts.Judge(&a)
-		default:
 		}
-
 	}
 }
 
