@@ -10,6 +10,10 @@
 		{
 			"ImportPath": "github.com/nsf/termbox-go",
 			"Rev": "cb876910ab743d892275180d0320e9e00e667e3e"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
 		}
 	]
 }
