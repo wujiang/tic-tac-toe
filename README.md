@@ -6,8 +6,10 @@ experience of playing the game within a terminal.
 
 ## Usage
 
-- Server: `ttt-server`
-- Client: `ttt-client`
+- Run server: `ttt-server`
+- Run client: `ttt-client`
+
+![Demo](demo.gif)
 
 ## Install
 0. [Go setup](http://golang.org/doc/install)
