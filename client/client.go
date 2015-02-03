@@ -50,14 +50,14 @@ func getCenter() ttt.Position {
 	return ttt.Position{x, y}
 }
 
-func isValidatePosition(p ttt.Position) bool {
+func isValidPosition(p ttt.Position) bool {
 	return p.X >= 0 && p.X < ttt.Size && p.Y >= 0 && p.Y < ttt.Size
 }
 
 // Convert grid positions to termbox coordinates
 func toTBPosition(p ttt.Position) (ttt.Position, error) {
 	tbCenter := getTBCenter()
-	if !isValidatePosition(p) {
+	if !isValidPosition(p) {
 		return p, errors.New("Invalid position")
 	}
 	center := getCenter()
@@ -117,7 +117,7 @@ func (tttc *TTTClient) MoveCursor(direction string) error {
 		x++
 	}
 
-	if !isValidatePosition(ttt.Position{x, y}) {
+	if !isValidPosition(ttt.Position{x, y}) {
 		return errors.New("Invalid position")
 	}
 
@@ -306,7 +306,7 @@ func (tttc *TTTClient) Listener() error {
 	return nil
 }
 
-func Init(name string) *TTTClient {
+func TTTCInit(name string) *TTTClient {
 	if err := termbox.Init(); err != nil {
 		glog.Fatalln(err)
 	}

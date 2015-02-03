@@ -17,6 +17,7 @@ type AIPlayer struct {
 	Conn       *websocket.Conn
 	VSID       string
 	VSName     string
+	VSScore    int
 	RoundID    string
 	Status     string
 	Grid       ttt.Grid
@@ -71,6 +72,7 @@ func (ai *AIPlayer) Update(s *ttt.PlayerStatus) error {
 	ai.Score = s.PlayerScore
 	ai.VSID = s.VSID
 	ai.VSName = s.VSName
+	ai.VSScore = s.VSScore
 	ai.Status = s.Status
 	if s.GridSnap != nil {
 		ai.Grid = *s.GridSnap
@@ -88,9 +90,7 @@ func (ai *AIPlayer) Move() {
 	if ai.Status != ttt.StatusYourTurn {
 		return
 	}
-
 	pos := ai.GetBestPosition()
-
 	m := ttt.PlayerAction{
 		RoundID:    ai.RoundID,
 		PlayerID:   ai.ID,

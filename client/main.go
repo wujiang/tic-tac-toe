@@ -23,7 +23,7 @@ func main() {
 	name := flag.String("u", username, "user name")
 	flag.Parse()
 
-	tttc := Init(*name)
+	tttc := TTTCInit(*name)
 	defer termbox.Close()
 
 	if err := tttc.Connect(*server); err != nil {
