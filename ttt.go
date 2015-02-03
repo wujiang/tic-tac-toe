@@ -46,14 +46,14 @@ const (
 	StatusLossConnection string = "Loss connection from server"
 
 	HelpMsg = `
+- 1-PERSON GAME: f1
+- 2-PERSON GAME: f2
 - LEFT: h, ctrl-b, arrow-left
 - DOWN: j, ctrl-n, arrow-down
 - UP: k, ctrl-p, arrow-up
 - RIGHT: l, ctrl-f, arrow-right
 - EXIT: q, esc
 - ENTER: i, enter, space
-- 1 PERSON GAME: f1
-- 2 PERSON GAME: f2
 `
 )
 

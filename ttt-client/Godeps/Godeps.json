@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/wujiang/tic-tac-toe/client",
+	"ImportPath": "github.com/wujiang/tic-tac-toe/ttt-client",
 	"GoVersion": "go1.4.1",
 	"Deps": [
 		{
