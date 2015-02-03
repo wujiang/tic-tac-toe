@@ -233,7 +233,7 @@ func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
 }
 
 func (ttts *TTTServer) ProcessQuit(p *Player) {
-	delete((*ttts.Players), p.Name)
+	delete((*ttts.Players), p.ID)
 	if p.RoundID != "" {
 		rd := (*ttts.Groups)[p.RoundID]
 		// end the round and put the other into waiting queue
@@ -251,7 +251,9 @@ func (ttts *TTTServer) ProcessQuit(p *Player) {
 		ttts.BenchPlayers.Remove(p)
 	}
 	glog.Infoln("close connection for player", p.repr())
-	p.WS.Close()
+	if p.WS != nil {
+		p.WS.Close()
+	}
 }
 
 func (ttts *TTTServer) ProcessAnnouncement(a *Announcement) {

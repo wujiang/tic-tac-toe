@@ -141,3 +141,101 @@ func TestAnnouncementtoPlayerStatus(t *testing.T) {
 	ps = ann.toPlayerStatus()
 	assert.Equal(t, *ps, expected)
 }
+
+func tttsTeardown() {
+	group := make(Group)
+	players := make(map[string]*Player)
+	ttts.Players = &players
+	ttts.BenchPlayers = &PlayersQueue{
+		players: list.New(),
+		lock:    sync.Mutex{},
+	}
+	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
+	ttts.Announce = make(chan *Announcement, BufferedChanLen)
+	ttts.Groups = &group
+
+	aiPlayers := make(map[string]*AIPlayer)
+	am.AIPlayers = &aiPlayers
+}
+
+func TestTTTScreateNewRound(t *testing.T) {
+	player1 := &Player{
+		ID:   "player-1",
+		Name: "Adam",
+	}
+	player2 := &Player{
+		ID:   "player-2",
+		Name: "John",
+	}
+	ttts.createNewRound(player1, player2)
+	assert.Equal(t, len(ttts.Announce), 2)
+	a1 := <-ttts.Announce
+	a2 := <-ttts.Announce
+	assert.True(t, (a1.ToPlayer == *player1 && a1.VSPlayer == *player2 &&
+		a2.ToPlayer == *player2 && a2.VSPlayer == *player1) ||
+		(a1.ToPlayer == *player2 && a1.VSPlayer == *player1 &&
+			a2.ToPlayer == *player1 && a2.VSPlayer == *player2))
+	tttsTeardown()
+}
+
+func TestTTTSProcessJoinAI(t *testing.T) {
+	player1 := &Player{
+		ID:   "player-1",
+		Name: "Adam",
+	}
+	ttts.ProcessJoin(player1, true)
+	assert.Equal(t, len(*am.AIPlayers), 1)
+	assert.Equal(t, len(*ttts.Players), 1)
+	assert.Equal(t, len(*ttts.Groups), 1)
+	tttsTeardown()
+}
+
+func TestTTTSProcessJoinSingle(t *testing.T) {
+	player1 := &Player{
+		ID:   "player-1",
+		Name: "Adam",
+	}
+	ttts.ProcessJoin(player1, false)
+	assert.Equal(t, len(*am.AIPlayers), 0)
+	assert.Equal(t, len(*ttts.Players), 1)
+	assert.Equal(t, len(*ttts.Groups), 0)
+	assert.Equal(t, ttts.BenchPlayers.Len(), 1)
+	tttsTeardown()
+}
+
+func TestTTTSProcessJoin(t *testing.T) {
+	player1 := &Player{
+		ID:   "player-1",
+		Name: "Adam",
+	}
+	ttts.ProcessJoin(player1, false)
+	player2 := &Player{
+		ID:   "player-2",
+		Name: "John",
+	}
+	ttts.ProcessJoin(player2, false)
+	assert.Equal(t, len(*am.AIPlayers), 0)
+	assert.Equal(t, len(*ttts.Players), 2)
+	assert.Equal(t, len(*ttts.Groups), 1)
+	assert.Equal(t, ttts.BenchPlayers.Len(), 0)
+	tttsTeardown()
+}
+
+func TestTTTSProcessQuit(t *testing.T) {
+	player1 := &Player{
+		ID:   "player-1",
+		Name: "Adam",
+	}
+	ttts.ProcessJoin(player1, false)
+	player2 := &Player{
+		ID:   "player-2",
+		Name: "John",
+	}
+	ttts.ProcessJoin(player2, false)
+	ttts.ProcessQuit(player1)
+	assert.Equal(t, len(*am.AIPlayers), 0)
+	assert.Equal(t, len(*ttts.Players), 1)
+	assert.Equal(t, len(*ttts.Groups), 0)
+	assert.Equal(t, ttts.BenchPlayers.Len(), 0)
+	tttsTeardown()
+}
