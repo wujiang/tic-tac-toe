@@ -159,10 +159,10 @@ func (ann *Announcement) toPlayerStatus() *ttt.PlayerStatus {
 type Group map[string]Round
 
 type TTTServer struct {
-	Players      *map[string]*Player
-	Groups       *Group
-	BenchPlayers *PlayersQueue
-	AIPlayers    chan *Player
+	Players       *map[string]*Player
+	Groups        *Group
+	BenchPlayers  *PlayersQueue
+	WithAIPlayers chan *Player
 
 	Announce chan *Announcement // outgoing channel
 }
@@ -214,8 +214,9 @@ func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
 	}
 	if withAI {
 		aip := &Player{
-			ID:   uuid.New(),
-			Name: "AI",
+			ID:    uuid.New(),
+			Name:  BotNames[ttt.RandInt(len(BotNames))],
+			Score: ttt.RandInt(100),
 		}
 		ttts.createNewRound(p, aip)
 		glog.Infoln("deploying AI player")
@@ -316,7 +317,7 @@ func (ttts *TTTServer) Daemon() {
 		select {
 		case a := <-ttts.Announce:
 			ttts.ProcessAnnouncement(a)
-		case p := <-ttts.AIPlayers:
+		case p := <-ttts.WithAIPlayers:
 			ttts.ProcessJoin(p, false)
 		case a := <-playerActions:
 			ttts.Judge(&a)
@@ -338,7 +339,7 @@ func InitTTTServer() *TTTServer {
 		players: list.New(),
 		lock:    sync.Mutex{},
 	}
-	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
+	ttts.WithAIPlayers = make(chan *Player, BufferedChanLen)
 	ttts.Announce = make(chan *Announcement, BufferedChanLen)
 	ttts.Groups = &group
 	go ttts.Daemon()

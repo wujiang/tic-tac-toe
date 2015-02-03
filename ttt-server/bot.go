@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
@@ -9,6 +10,59 @@ import (
 )
 
 var am = InitAIManager()
+
+var BotNames = [50]string{
+	"Bulbasaur",
+	"Ivysaur",
+	"Venusaur",
+	"Charmander",
+	"Charmeleon",
+	"Charizard",
+	"Squirtle",
+	"Wartortle",
+	"Blastoise",
+	"Caterpie",
+	"Metapod",
+	"Butterfree",
+	"Weedle",
+	"Kakuna",
+	"Beedrill",
+	"Pidgey",
+	"Pidgeotto",
+	"Pidgeot",
+	"Rattata",
+	"Raticate",
+	"Spearow",
+	"Fearow",
+	"Ekans",
+	"Arbok",
+	"Pikachu",
+	"Raichu",
+	"Sandshrew",
+	"Sandslash",
+	"Nidoran",
+	"Nidorina",
+	"Nidoqueen",
+	"Nidoran",
+	"Nidorino",
+	"Nidoking",
+	"Clefairy",
+	"Clefable",
+	"Vulpix",
+	"Ninetales",
+	"Jigglypuff",
+	"Wigglytuff",
+	"Zubat",
+	"Golbat",
+	"Oddish",
+	"Gloom",
+	"Vileplume",
+	"Paras",
+	"Parasect",
+	"Venonat",
+	"Venomoth",
+	"Diglett",
+}
 
 type AIPlayer struct {
 	Name       string
@@ -63,8 +117,9 @@ func (am *AIManager) Dispatch() {
 func (ai *AIPlayer) Update(s *ttt.PlayerStatus) error {
 	if s.RoundID != "" && ai.RoundID != s.RoundID &&
 		!ttt.IsOverStatus(ai.Status) {
-		glog.Warningln("Round IDs do not match for AI player")
-		return errors.New("Round IDs do not match for AI player")
+		msg := "Round IDs do not match for AI player"
+		glog.Warningln(msg)
+		return errors.New(msg)
 	} else {
 		ai.RoundID = s.RoundID
 	}
@@ -98,6 +153,8 @@ func (ai *AIPlayer) Move() {
 		Pos:        pos,
 		Cmd:        ttt.CmdMove,
 	}
+	// sleep a bit to make it look like human
+	time.Sleep(time.Duration(ttt.RandInt(1000)) * time.Millisecond)
 	playerActions <- m
 }
 
