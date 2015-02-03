@@ -19,7 +19,7 @@ func main() {
 	} else {
 		username = systemUser.Username
 	}
-	server := flag.String("s", "ws://localhost:8001", "server")
+	server := flag.String("s", "ws://localhost:8080", "server")
 	name := flag.String("u", username, "user name")
 	flag.Parse()
 
