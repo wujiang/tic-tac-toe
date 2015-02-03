@@ -111,9 +111,9 @@ func (r *Round) switchTurn() {
 }
 
 func (r *Round) getOtherPlayer(p *Player) *Player {
-	if r.CurrentPlayer != p {
+	if r.CurrentPlayer != p && r.NextPlayer == p {
 		return r.CurrentPlayer
-	} else if r.NextPlayer != p {
+	} else if r.NextPlayer != p && r.CurrentPlayer == p {
 		return r.NextPlayer
 	} else {
 		return nil
