@@ -21,7 +21,7 @@ func amTeardown() {
 		players: list.New(),
 		lock:    sync.Mutex{},
 	}
-	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
+	ttts.WithAIPlayers = make(chan *Player, BufferedChanLen)
 	ttts.Announce = make(chan *Announcement, BufferedChanLen)
 	ttts.Groups = &group
 

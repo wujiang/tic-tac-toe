@@ -2,23 +2,12 @@ package main
 
 import (
 	"container/list"
-	"net/http/httptest"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/wujiang/tic-tac-toe"
 )
-
-var server *httptest.Server
-
-func setup() {
-	// server = httptest.NewServer(WSHandler)
-}
-
-func teardown() {
-	server.Close()
-}
 
 func TestPlayersQueuePush(t *testing.T) {
 	pq := PlayersQueue{
@@ -150,7 +139,7 @@ func tttsTeardown() {
 		players: list.New(),
 		lock:    sync.Mutex{},
 	}
-	ttts.AIPlayers = make(chan *Player, BufferedChanLen)
+	ttts.WithAIPlayers = make(chan *Player, BufferedChanLen)
 	ttts.Announce = make(chan *Announcement, BufferedChanLen)
 	ttts.Groups = &group
 
