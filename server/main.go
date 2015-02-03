@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	addr := flag.String("addr", ":8001", "host address")
+	addr := flag.String("p", ":8001", "port")
 	flag.Parse()
 	http.HandleFunc("/", WSHandler)
 
