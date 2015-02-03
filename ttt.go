@@ -45,6 +45,7 @@ const (
 	StatusWaitTurn       string = "Other user's turn"
 	StatusLossConnection string = "Loss connection from server"
 
+	Title   = "Tic-tac-toe"
 	HelpMsg = `
 - 1-PERSON GAME: f1
 - 2-PERSON GAME: f2

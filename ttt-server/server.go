@@ -204,14 +204,14 @@ func (ttts *TTTServer) createNewRound(p1, p2 *Player) Round {
 }
 
 func (ttts *TTTServer) ProcessJoin(p *Player, withAI bool) {
+	(*ttts.Players)[p.ID] = p
+	glog.Infoln("total players", len((*ttts.Players)))
 	ttts.Announce <- &Announcement{
 		ToPlayer: *p,
 		VSPlayer: Player{},
 		Rd:       Round{},
 		Status:   ttt.StatusWait,
 	}
-	(*ttts.Players)[p.ID] = p
-	glog.Infoln("total players", len((*ttts.Players)))
 	if withAI {
 		aip := &Player{
 			ID:   uuid.New(),

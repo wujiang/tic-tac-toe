@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
@@ -24,19 +25,21 @@ func fill(x, y, w, h int, r rune) {
 	}
 }
 
-func printLines(x, y int, msg string, fg termbox.Attribute) {
-	xstart := x
-	ystart := y
-	for _, c := range msg {
-		if c == '\n' {
-			xstart = x
-			ystart++
-			continue
+func printLines(centerX int, y int, msg string, fg termbox.Attribute,
+	alignCenter bool) {
+	msgs := strings.Split(msg, "\n")
+	x := centerX - ttt.Width/2
+	for _, m := range msgs {
+		if alignCenter {
+			x = centerX - len(m)/2
 		}
-		termbox.SetCell(xstart, ystart, c, fg, ttt.ColDef)
-		xstart++
+		xstart := x
+		for _, c := range m {
+			termbox.SetCell(xstart, y, c, fg, ttt.ColDef)
+			xstart++
+		}
+		y++
 	}
-
 }
 
 func getTBCenter() ttt.Position {
@@ -197,11 +200,13 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
-	printLines(tbLeftXPos, tbUpYPos+ttt.Height+2, tttc.userScores(),
-		ttt.ColDef)
-	printLines(tbLeftXPos, tbUpYPos+ttt.Height+4, tttc.Status,
-		termbox.ColorBlue)
-	printLines(tbLeftXPos, tbUpYPos+ttt.Height+6, ttt.HelpMsg, ttt.ColDef)
+	printLines(tbCenter.X, tbUpYPos-2, ttt.Title, ttt.ColDef, true)
+	printLines(tbCenter.X, tbUpYPos+ttt.Height+2, tttc.userScores(),
+		ttt.ColDef, false)
+	printLines(tbCenter.X, tbUpYPos+ttt.Height+4, tttc.Status,
+		termbox.ColorBlue, false)
+	printLines(tbCenter.X, tbUpYPos+ttt.Height+6, ttt.HelpMsg, ttt.ColDef,
+		false)
 
 	tttc.SetCursor(tttc.CursorPos)
 	// draw all on cells
@@ -255,6 +260,7 @@ func (tttc *TTTClient) Update(s ttt.PlayerStatus) error {
 	tttc.VSName = s.VSName
 	tttc.VSScore = s.VSScore
 	tttc.Status = s.Status
+
 	if s.GridSnap != nil {
 		tttc.Grid = *s.GridSnap
 	} else {
@@ -287,15 +293,15 @@ func (tttc *TTTClient) Listener() error {
 		if err != nil {
 			glog.Warningln(tttc.ID, err)
 			status = ttt.PlayerStatus{
-				tttc.RoundID,
-				tttc.Name,
-				tttc.ID,
-				tttc.Score,
-				tttc.VSID,
-				tttc.VSName,
-				tttc.VSScore,
-				ttt.StatusLossConnection,
-				&tttc.Grid,
+				RoundID:     tttc.RoundID,
+				PlayerName:  tttc.Name,
+				PlayerID:    tttc.ID,
+				PlayerScore: tttc.Score,
+				VSID:        tttc.VSID,
+				VSName:      tttc.VSName,
+				VSScore:     tttc.VSScore,
+				Status:      ttt.StatusLossConnection,
+				GridSnap:    &tttc.Grid,
 			}
 			tttc.Update(status)
 			return nil
