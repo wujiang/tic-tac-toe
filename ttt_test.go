@@ -171,7 +171,7 @@ func TestGameJudgeWin(t *testing.T) {
 		Grd:           Grid{{"X", "X"}},
 	}
 	score, over := g.Judge("X", Position{0, 2})
-	assert.Equal(t, score, 1)
+	assert.Equal(t, score, Score)
 	assert.True(t, over)
 }
 
@@ -203,7 +203,7 @@ func TestGameGetBestMove(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("X")
-	assert.Equal(t, r, GameResult{1, Position{1, 1}})
+	assert.Equal(t, r, GameResult{Score, Position{1, 1}})
 }
 
 func TestGameGetBestMove2(t *testing.T) {
@@ -351,5 +351,5 @@ func TestGameGetBestMove11(t *testing.T) {
 		Grd:           grid,
 	}
 	r := g.GetBestMove("O")
-	assert.Equal(t, r, GameResult{1, Position{1, 1}})
+	assert.Equal(t, r, GameResult{Score, Position{1, 1}})
 }

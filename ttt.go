@@ -45,6 +45,8 @@ const (
 	StatusWaitTurn       string = "Other user's turn"
 	StatusLossConnection string = "Loss connection from server"
 
+	Score = 1
+
 	Title   = "Tic-tac-toe"
 	HelpMsg = `
 - 1-PERSON GAME: f1
@@ -301,7 +303,7 @@ type Game struct {
 // Return score and whether or not the game is over
 func (g Game) Judge(player string, pos Position) (int, bool) {
 	if g.Grd.HasSameMarksInRows(pos, player) {
-		return 1, true
+		return Score, true
 	} else if g.Grd.IsFull() {
 		return 0, true
 	} else {
@@ -333,7 +335,13 @@ func (g Game) GetBestMove(player string) GameResult {
 			if ng.CurrentPlayer != player {
 				score = -score
 			}
-			gs = append(gs, GameResult{score, p})
+			gr := GameResult{score, p}
+			// As long as the score reaches the highest of
+			// a round, no need to search further
+			if score == Score {
+				return gr
+			}
+			gs = append(gs, gr)
 		} else {
 			ng.Grd.Set(p, ng.CurrentPlayer)
 			(&ng).SwitchTurn()

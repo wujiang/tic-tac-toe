@@ -280,8 +280,8 @@ func (ttts *TTTServer) Judge(m *ttt.PlayerAction) {
 	rd.switchTurn()
 	if rd.Grid.HasSameMarksInRows(m.Pos, m.PlayerID) {
 		rd.Winner = rd.NextPlayer
-		rd.CurrentPlayer.Score -= 1
-		rd.NextPlayer.Score += 1
+		rd.CurrentPlayer.Score -= ttt.Score
+		rd.NextPlayer.Score += ttt.Score
 		ttts.EndRound(m.RoundID)
 		currentUserStatus = ttt.StatusLoss
 		nextUserStatus = ttt.StatusWin
