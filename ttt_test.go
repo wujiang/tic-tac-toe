@@ -354,3 +354,12 @@ func TestGameGetBestMove11(t *testing.T) {
 	r := g.GetBestMove("O")
 	assert.Equal(t, r, GameResult{Score, Position{1, 1}})
 }
+
+func TestPlayerStatusRepr(t *testing.T) {
+	ps := &PlayerStatus{
+		RoundID:    "round-id",
+		PlayerName: "Adam",
+	}
+	msg := `{"round_id":"round-id","player_name":"Adam","status":"","grid_snap":null}`
+	assert.Equal(t, ps.Repr(), msg)
+}
