@@ -117,6 +117,11 @@ func GetCenter() Position {
 	}
 }
 
+// Check if a given position is valid within the grid
+func IsValidPosition(p Position) bool {
+	return p.X >= 0 && p.X < Size && p.Y >= 0 && p.Y < Size
+}
+
 type Grid [Size][Size]string
 
 func (g *Grid) Get(p Position) string {

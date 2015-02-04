@@ -20,6 +20,11 @@ func TestGetCenter(t *testing.T) {
 	assert.Equal(t, GetCenter(), Position{(Size - 1) / 2, (Size - 1) / 2})
 }
 
+func TestIsValidPosition(t *testing.T) {
+	assert.True(t, IsValidPosition(Position{RandInt(3), RandInt(3)}))
+	assert.False(t, IsValidPosition(Position{3, 0}))
+}
+
 func TestGridGet(t *testing.T) {
 	gd := Grid{}
 	assert.Equal(t, gd.Get(Position{0, 0}), "")
