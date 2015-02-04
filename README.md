@@ -1,5 +1,7 @@
 # Tic-tac-toe in Terminal
 
+[![Build Status](https://travis-ci.org/wujiang/tic-tac-toe.svg)](https://travis-ci.org/wujiang/tic-tac-toe)
+
 [Tic-tac-toe](http://en.wikipedia.org/wiki/Tic-tac-toe) is a 2-player
 zero-sum game on a 3 x 3 grid. This program provides an
 experience of playing the game within a terminal.
