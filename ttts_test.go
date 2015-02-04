@@ -16,6 +16,10 @@ func TestitemInSlice(t *testing.T) {
 	assert.False(t, itemInSlice("foo", []string{"hello", "world"}))
 }
 
+func TestGetCenter(t *testing.T) {
+	assert.Equal(t, GetCenter(), Position{(Size - 1) / 2, (Size - 1) / 2})
+}
+
 func TestGridGet(t *testing.T) {
 	gd := Grid{}
 	assert.Equal(t, gd.Get(Position{0, 0}), "")

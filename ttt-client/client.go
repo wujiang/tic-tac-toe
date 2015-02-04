@@ -17,6 +17,9 @@ const (
 	nameLengthLimit = 8
 )
 
+// Fill a range with a give rune.
+// x, y: starting position
+// w, h: range
 func fill(x, y, w, h int, r rune) {
 	for ly := 0; ly < h; ly++ {
 		for lx := 0; lx < w; lx++ {
@@ -25,6 +28,12 @@ func fill(x, y, w, h int, r rune) {
 	}
 }
 
+// Print lines
+// centerX: center x of a terminal
+// y: starting position
+// msg: messages to be printed
+// fg: foreground
+// alignCenter: whether or not msg will be center aligned
 func printLines(centerX int, y int, msg string, fg termbox.Attribute,
 	alignCenter bool) {
 	msgs := strings.Split(msg, "\n")
@@ -42,15 +51,10 @@ func printLines(centerX int, y int, msg string, fg termbox.Attribute,
 	}
 }
 
+// Get terminal's center
 func getTBCenter() ttt.Position {
 	w, h := termbox.Size()
 	return ttt.Position{w / 2, h / 2}
-}
-
-func getCenter() ttt.Position {
-	x := (ttt.Size - 1) / 2
-	y := (ttt.Size - 1) / 2
-	return ttt.Position{x, y}
 }
 
 func isValidPosition(p ttt.Position) bool {
@@ -63,7 +67,7 @@ func toTBPosition(p ttt.Position) (ttt.Position, error) {
 	if !isValidPosition(p) {
 		return p, errors.New("Invalid position")
 	}
-	center := getCenter()
+	center := ttt.GetCenter()
 	x := tbCenter.X - (center.X-p.X)*ttt.Width/ttt.Size
 	y := tbCenter.Y - (center.Y-p.Y)*ttt.Height/ttt.Size
 	return ttt.Position{x, y}, nil
@@ -318,7 +322,7 @@ func TTTCInit(name string) *TTTClient {
 	}
 
 	termbox.SetInputMode(termbox.InputEsc)
-	center := getCenter()
+	center := ttt.GetCenter()
 	tttc := TTTClient{}
 	if len(name) > nameLengthLimit {
 		tttc.Name = name[:nameLengthLimit]

@@ -9,8 +9,6 @@ import (
 	"github.com/wujiang/tic-tac-toe"
 )
 
-// TODO: send PingMessage to server to keep the connection alive
-
 func main() {
 	systemUser, err := user.Current()
 	var username string
@@ -27,7 +25,7 @@ func main() {
 	defer termbox.Close()
 
 	if err := tttc.Connect(*server); err != nil {
-		glog.Exitln("Can not connect to server")
+		glog.Exitln("Can not connect to server.")
 	}
 
 	go tttc.Listener()
@@ -37,7 +35,7 @@ mainloop:
 	for {
 		switch ev := termbox.PollEvent(); ev.Type {
 		case termbox.EventKey:
-			// arrows ane emacs key bindings
+			// arrows and emacs key bindings
 			switch ev.Key {
 			case termbox.KeyEnter, termbox.KeySpace:
 				tttc.PinCursor(ttt.MyRune)

@@ -109,6 +109,14 @@ type Position struct {
 	Y int `json:"y"`
 }
 
+// Get the center of the grid
+func GetCenter() Position {
+	return Position{
+		X: (Size - 1) / 2,
+		Y: (Size - 1) / 2,
+	}
+}
+
 type Grid [Size][Size]string
 
 func (g *Grid) Get(p Position) string {
