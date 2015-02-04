@@ -14,6 +14,7 @@ func TestRandInt(t *testing.T) {
 func TestitemInSlice(t *testing.T) {
 	assert.True(t, itemInSlice("hello", []string{"hello", "world"}))
 	assert.False(t, itemInSlice("foo", []string{"hello", "world"}))
+	assert.False(t, itemInSlice("foo", []string{}))
 }
 
 func TestGetCenter(t *testing.T) {
