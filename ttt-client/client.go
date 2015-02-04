@@ -103,7 +103,8 @@ func (tttc *TTTClient) nameToRune(s string) rune {
 
 // Check if a cell is available
 func (tttc *TTTClient) cellIsPinnable(p ttt.Position) bool {
-	return tttc.RoundID != "" && tttc.Grid.Get(p) == ""
+	return ttt.IsValidPosition(p) && tttc.RoundID != "" &&
+		tttc.Grid.Get(p) == ""
 }
 
 func (tttc *TTTClient) MoveCursor(direction string) error {
@@ -183,6 +184,7 @@ func (tttc *TTTClient) RedrawAll() {
 	tbLeftXPos := tbCenter.X - ttt.Width/2
 	tbUpYPos := tbCenter.Y - ttt.Height/2
 
+	// draw the grid
 	for yoffset := 0; yoffset <= ttt.Size; yoffset++ {
 		for xoffset := 0; xoffset <= ttt.Size; xoffset++ {
 			xstart := tbLeftXPos + xoffset*ttt.XSpan
@@ -200,6 +202,7 @@ func (tttc *TTTClient) RedrawAll() {
 		}
 	}
 
+	// player score, status, and user manual
 	printLines(tbCenter.X, tbUpYPos-2, ttt.Title, ttt.ColDef, true)
 	printLines(tbCenter.X, tbUpYPos+ttt.Height+2, tttc.userScores(),
 		ttt.ColDef, false)
@@ -209,7 +212,8 @@ func (tttc *TTTClient) RedrawAll() {
 		false)
 
 	tttc.SetCursor(tttc.CursorPos)
-	// draw all on cells
+
+	// draw all Xs and Os
 	tttc.drawCells()
 	termbox.Flush()
 }
@@ -286,6 +290,7 @@ func (tttc *TTTClient) Quit() error {
 	return tttc.SendSimpleCMD(ttt.CmdQuit)
 }
 
+// Listen for messages from the server
 func (tttc *TTTClient) Listener() error {
 	for {
 		status := ttt.PlayerStatus{}
@@ -316,7 +321,6 @@ func TTTCInit(name string) *TTTClient {
 	if err := termbox.Init(); err != nil {
 		glog.Fatalln(err)
 	}
-
 	termbox.SetInputMode(termbox.InputEsc)
 	center := ttt.GetCenter()
 	tttc := TTTClient{}
